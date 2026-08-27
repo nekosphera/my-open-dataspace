@@ -1,0 +1,142 @@
+{
+  "@context": {
+    "dct": "http://purl.org/dc/terms/",
+    "ods": "urn:ods:",
+    "owl": "http://www.w3.org/2002/07/owl#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "sh": "http://www.w3.org/ns/shacl#",
+    "rdfs:label": {
+      "@container": "@language"
+    },
+    "rdfs:comment": {
+      "@container": "@language"
+    }
+  },
+  "@graph": [
+    {
+      "@id": "urn:ods:ns",
+      "@type": "owl:Ontology",
+      "dct:title": "My Open Dataspace terms",
+      "dct:description": "The terms My Open Dataspace adds to DCAT, DCAT-AP and ODRL, and nothing more. Where a term extends a standard vocabulary the standard one is used instead; these exist because no standard term carried the meaning. The normative documents are the profiles that use them: the DCAT-AP profile and its SHACL shapes, and the ODRL policy profile. This document is the index of the namespace, so that a reader who meets one of these IRIs in a catalogue can find out what it means.",
+      "dct:hasVersion": "1.0.0",
+      "rdfs:seeAlso": [
+        "urn:ods:profile:dcat-ap:1.0.0",
+        "urn:ods:profile:dcat-ap:1.0.0",
+        "urn:ods:profile:odrl:1.0.0"
+      ]
+    },
+    {
+      "@id": "ods:DatasetShape",
+      "@type": "sh:NodeShape",
+      "rdfs:label": {
+        "en": "Dataset shape",
+        "es": "Forma de conjunto de datos"
+      },
+      "rdfs:comment": {
+        "en": "The SHACL node shape a dataset must conform to before it is published to the catalogue. Defined in the shapes document of the DCAT-AP profile, which is where its constraints live."
+      },
+      "rdfs:isDefinedBy": "urn:ods:shapes:dcat-ap:1.0.0"
+    },
+    {
+      "@id": "ods:deliveryMode",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:label": {
+        "en": "Delivery mode",
+        "es": "Modo de entrega"
+      },
+      "rdfs:comment": {
+        "en": "How the data reaches a consumer, as opposed to what format it is in: dcat:mediaType says the format. One of dashboard, download, api or streaming. Required by the DCAT-AP profile."
+      },
+      "rdfs:domain": "http://www.w3.org/ns/dcat#Dataset",
+      "rdfs:isDefinedBy": "urn:ods:profile:dcat-ap:1.0.0"
+    },
+    {
+      "@id": "ods:policyId",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:label": {
+        "en": "Policy identifier",
+        "es": "Identificador de política"
+      },
+      "rdfs:comment": {
+        "en": "The identifier, in the connector that offers the dataset, of the policy that governs its use. Required by the DCAT-AP profile: a dataset published without one cannot be negotiated for."
+      },
+      "rdfs:domain": "http://www.w3.org/ns/dcat#Dataset",
+      "rdfs:isDefinedBy": "urn:ods:profile:dcat-ap:1.0.0"
+    },
+    {
+      "@id": "ods:contractId",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:label": {
+        "en": "Contract identifier",
+        "es": "Identificador de contrato"
+      },
+      "rdfs:comment": {
+        "en": "The identifier, in the connector that offers the dataset, of the contract definition under which it is offered. Required by the DCAT-AP profile."
+      },
+      "rdfs:domain": "http://www.w3.org/ns/dcat#Dataset",
+      "rdfs:isDefinedBy": "urn:ods:profile:dcat-ap:1.0.0"
+    },
+    {
+      "@id": "ods:purpose",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:label": {
+        "en": "Purpose",
+        "es": "Finalidad"
+      },
+      "rdfs:comment": {
+        "en": "The purpose a policy constrains use to. Required by the ODRL policy profile."
+      },
+      "rdfs:isDefinedBy": "urn:ods:profile:odrl:1.0.0"
+    },
+    {
+      "@id": "ods:policyProfile",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:label": {
+        "en": "Policy profile",
+        "es": "Perfil de política"
+      },
+      "rdfs:comment": {
+        "en": "The policy profile a policy declares conformance to. Required by the ODRL policy profile, so that a consumer can tell which vocabulary of actions and duties is in force."
+      },
+      "rdfs:isDefinedBy": "urn:ods:profile:odrl:1.0.0"
+    },
+    {
+      "@id": "ods:classificationKey",
+      "@type": "owl:DatatypeProperty",
+      "rdfs:label": {
+        "en": "Classification key",
+        "es": "Clave de clasificación"
+      },
+      "rdfs:comment": {
+        "en": "The classification a policy applies to. Required by the ODRL policy profile."
+      },
+      "rdfs:isDefinedBy": "urn:ods:profile:odrl:1.0.0"
+    },
+    {
+      "@id": "ods:controlledValues",
+      "@type": "owl:ObjectProperty",
+      "rdfs:label": {
+        "en": "Controlled values",
+        "es": "Valores controlados"
+      },
+      "rdfs:comment": {
+        "en": "Stated on a profile document, not on a dataset: the closed lists of values the profile admits, term by term. A validator reads these rather than carrying its own copy, so that the profile is the single place the lists are written."
+      },
+      "rdfs:domain": "http://purl.org/dc/terms/Standard",
+      "rdfs:isDefinedBy": "urn:ods:profile:dcat-ap:1.0.0"
+    },
+    {
+      "@id": "ods:controlledActions",
+      "@type": "owl:ObjectProperty",
+      "rdfs:label": {
+        "en": "Controlled actions",
+        "es": "Acciones controladas"
+      },
+      "rdfs:comment": {
+        "en": "Stated on a policy profile document: the closed list of actions the profile controls, whether it permits, prohibits or attaches a duty to them."
+      },
+      "rdfs:domain": "http://purl.org/dc/terms/Standard",
+      "rdfs:isDefinedBy": "urn:ods:profile:odrl:1.0.0"
+    }
+  ]
+}

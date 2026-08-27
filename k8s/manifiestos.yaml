@@ -1,0 +1,342 @@
+# My Open Dataspace en Kubernetes — los mismos seis servicios del docker-compose.
+#
+# La configuracion (ods-config), las contrasenas (ods-secret) y los ficheros
+# (Caddyfile, realm de Keycloak, SQL inicial) los crea k8s/desplegar.sh a
+# partir del .env y de la carpeta deploy/ del repositorio.
+#
+# Diferencias con docker-compose:
+#   - Sin /var/run/docker.sock. El conector de cada participante lo levanta
+#     `app` contra la API del cluster (ODS_ORQUESTADOR=kubernetes): un
+#     Deployment y un Service `ods-connector-...` por alta aprobada. Lo que
+#     puede hacer lo limita el Role de abajo a este espacio de nombres.
+#   - Volumenes nuevos: la base de datos empieza vacia (con el ejemplo de demo).
+#   - Las imagenes de app y connector las pone desplegar.sh segun el .env.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: my-open-dataspace
+---
+# ---------------------------------------------------------------- permisos de app
+# Lo justo para levantar, listar y retirar el conector de cada participante y
+# para ejecutar el SQL que crea su base (un Job con psql). Solo en este espacio
+# de nombres: nada del resto del cluster.
+apiVersion: v1
+kind: ServiceAccount
+metadata: { name: ods-app, namespace: my-open-dataspace }
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata: { name: ods-app-conectores, namespace: my-open-dataspace }
+rules:
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    verbs: ["get", "list", "create", "patch", "delete"]
+  - apiGroups: [""]
+    resources: ["services"]
+    verbs: ["get", "list", "create", "delete"]
+  - apiGroups: [""]
+    resources: ["pods", "pods/log"]
+    verbs: ["get", "list"]
+  - apiGroups: ["batch"]
+    resources: ["jobs"]
+    verbs: ["get", "list", "create", "delete"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata: { name: ods-app-conectores, namespace: my-open-dataspace }
+subjects:
+  - { kind: ServiceAccount, name: ods-app, namespace: my-open-dataspace }
+roleRef: { apiGroup: rbac.authorization.k8s.io, kind: Role, name: ods-app-conectores }
+---
+# ---------------------------------------------------------------- volumenes
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: pgdata, namespace: my-open-dataspace }
+spec: { accessModes: [ReadWriteOnce], resources: { requests: { storage: 2Gi } } }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: ods-data, namespace: my-open-dataspace }
+spec: { accessModes: [ReadWriteOnce], resources: { requests: { storage: 2Gi } } }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: fuseki-data, namespace: my-open-dataspace }
+spec: { accessModes: [ReadWriteOnce], resources: { requests: { storage: 2Gi } } }
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata: { name: caddy-data, namespace: my-open-dataspace }
+spec: { accessModes: [ReadWriteOnce], resources: { requests: { storage: 256Mi } } }
+---
+# ---------------------------------------------------------------- postgres
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: postgres, namespace: my-open-dataspace }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app: postgres } }
+  template:
+    metadata: { labels: { app: postgres } }
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:16-alpine
+          env:
+            - { name: POSTGRES_USER, value: dataspace }
+            - { name: POSTGRES_DB, value: dataspace }
+            - { name: PGDATA, value: /var/lib/postgresql/data/pgdata }
+            - name: POSTGRES_PASSWORD
+              valueFrom: { secretKeyRef: { name: ods-secret, key: ODS_DB_PASSWORD } }
+          ports: [ { containerPort: 5432 } ]
+          readinessProbe:
+            exec: { command: ["pg_isready", "-U", "dataspace", "-d", "dataspace"] }
+            periodSeconds: 5
+          volumeMounts:
+            - { name: data, mountPath: /var/lib/postgresql/data }
+            - { name: init, mountPath: /docker-entrypoint-initdb.d, readOnly: true }
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: pgdata } }
+        - { name: init, configMap: { name: ods-db-init } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: postgres, namespace: my-open-dataspace }
+spec:
+  selector: { app: postgres }
+  ports: [ { port: 5432 } ]
+---
+# ---------------------------------------------------------------- keycloak
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: keycloak, namespace: my-open-dataspace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: keycloak } }
+  template:
+    metadata: { labels: { app: keycloak } }
+    spec:
+      initContainers:
+        - name: espera-postgres
+          image: postgres:16-alpine
+          command: ["sh", "-c", "until pg_isready -h postgres -U dataspace; do sleep 2; done"]
+      containers:
+        - name: keycloak
+          image: quay.io/keycloak/keycloak:26.0
+          args: ["start-dev", "--import-realm", "--http-relative-path=/auth"]
+          env:
+            - name: ODS_PUBLIC_URL
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_PUBLIC_URL } }
+            - name: ODS_REALM
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_REALM } }
+            - name: ODS_ADMIN_EMAIL
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_ADMIN_EMAIL } }
+            - { name: KC_BOOTSTRAP_ADMIN_USERNAME, value: admin }
+            - name: KC_BOOTSTRAP_ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: ods-secret, key: ODS_KEYCLOAK_ADMIN_PASSWORD } }
+            - { name: KC_DB, value: postgres }
+            - { name: KC_DB_URL, value: "jdbc:postgresql://postgres:5432/keycloak" }
+            - { name: KC_DB_USERNAME, value: dataspace }
+            - name: KC_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: ods-secret, key: ODS_DB_PASSWORD } }
+            - { name: KC_HOSTNAME, value: "$(ODS_PUBLIC_URL)/auth" }
+            - { name: KC_HTTP_ENABLED, value: "true" }
+            - { name: KC_PROXY_HEADERS, value: xforwarded }
+          ports: [ { containerPort: 8080 } ]
+          volumeMounts:
+            - { name: realm, mountPath: /opt/keycloak/data/import, readOnly: true }
+      volumes:
+        - { name: realm, configMap: { name: ods-keycloak-realm } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: keycloak, namespace: my-open-dataspace }
+spec:
+  selector: { app: keycloak }
+  ports: [ { port: 8080 } ]
+---
+# ---------------------------------------------------------------- fuseki
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: fuseki, namespace: my-open-dataspace }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app: fuseki } }
+  template:
+    metadata: { labels: { app: fuseki } }
+    spec:
+      containers:
+        - name: fuseki
+          image: stain/jena-fuseki:5.1.0
+          imagePullPolicy: IfNotPresent   # la carga desplegar.sh (solo existe para AMD64)
+          env:
+            - name: ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: ods-secret, key: ODS_FUSEKI_ADMIN_PASSWORD } }
+            - { name: FUSEKI_DATASET_1, value: dataspace }
+            - { name: TDB, value: "2" }
+          ports: [ { containerPort: 3030 } ]
+          volumeMounts:
+            - { name: data, mountPath: /fuseki }
+      volumes:
+        - { name: data, persistentVolumeClaim: { claimName: fuseki-data } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: fuseki, namespace: my-open-dataspace }
+spec:
+  selector: { app: fuseki }
+  ports: [ { port: 3030 } ]
+---
+# ---------------------------------------------------------------- conector
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: connector, namespace: my-open-dataspace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: connector } }
+  template:
+    metadata: { labels: { app: connector } }
+    spec:
+      initContainers:
+        - name: espera-postgres
+          image: postgres:16-alpine
+          command: ["sh", "-c", "until pg_isready -h postgres -U dataspace; do sleep 2; done"]
+      containers:
+        - name: connector
+          image: myopendataspace/connector:dev
+          imagePullPolicy: IfNotPresent   # imagen local, la carga desplegar.sh
+          env:
+            - name: ODS_PUBLIC_URL
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_PUBLIC_URL } }
+            - name: ODS_REALM
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_REALM } }
+            - { name: EDC_RBAC_WRITE_ROLES, value: "dataspace-provider,dataspace-admin" }
+            - { name: EDC_UPSTREAM_PUBLIC_URL, value: "$(ODS_PUBLIC_URL)" }
+            - { name: EDC_UPSTREAM_INTERNAL_URL, value: "http://app:8092" }
+            - name: EDC_CONNECTOR_ID
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_CONNECTOR_ID } }
+            - name: EDC_CONNECTOR_NAME
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_ORG_NAME } }
+            - { name: EDC_AUTH_MODE, value: keycloak }
+            - { name: EDC_API_CONTROL_BASEURL, value: "http://connector:8080" }
+            - { name: EDC_IAM_ENDPOINT, value: "http://keycloak:8080/auth/realms/$(ODS_REALM)" }
+            - { name: KEYCLOAK_JWKS_URL, value: "http://keycloak:8080/auth/realms/$(ODS_REALM)/protocol/openid-connect/certs" }
+            - { name: KEYCLOAK_ISSUER_URL, value: "$(ODS_PUBLIC_URL)/auth/realms/$(ODS_REALM)" }
+            - { name: DATABASE_URL, value: "jdbc:postgresql://postgres:5432/dataspace" }
+            - { name: DATABASE_USER, value: dataspace }
+            - name: DATABASE_PASSWORD
+              valueFrom: { secretKeyRef: { name: ods-secret, key: ODS_DB_PASSWORD } }
+            - name: EDC_DOWNLOAD_ALLOWED_HOSTS
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_DOWNLOAD_ALLOWED_HOSTS } }
+          ports: [ { containerPort: 8080 }, { containerPort: 9090 }, { containerPort: 9091 } ]
+          volumeMounts:
+            - { name: estado, mountPath: /var/lib/ods/files, subPath: files }
+      volumes:
+        - { name: estado, persistentVolumeClaim: { claimName: ods-data } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: connector, namespace: my-open-dataspace }
+spec:
+  selector: { app: connector }
+  ports:
+    - { name: http, port: 8080 }
+    - { name: p9090, port: 9090 }
+    - { name: p9091, port: 9091 }
+---
+# ---------------------------------------------------------------- app
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: app, namespace: my-open-dataspace }
+spec:
+  replicas: 1
+  selector: { matchLabels: { app: app } }
+  template:
+    metadata: { labels: { app: app } }
+    spec:
+      serviceAccountName: ods-app
+      initContainers:
+        - name: espera-postgres
+          image: postgres:16-alpine
+          command: ["sh", "-c", "until pg_isready -h postgres -U dataspace; do sleep 2; done"]
+      containers:
+        - name: app
+          image: myopendataspace/app:dev
+          imagePullPolicy: IfNotPresent   # imagen local, la carga desplegar.sh
+          envFrom:
+            - configMapRef: { name: ods-config }
+          env:
+            - { name: ODS_ORQUESTADOR, value: kubernetes }
+            - { name: ODS_CONNECTOR_URL, value: "http://connector:8080" }
+            - { name: ODS_FUSEKI_URL, value: "http://fuseki:3030" }
+            - { name: ODS_FUSEKI_DATASET, value: dataspace }
+            - name: ODS_FUSEKI_ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: ods-secret, key: ODS_FUSEKI_ADMIN_PASSWORD } }
+            - name: ODS_DB_PASSWORD
+              valueFrom: { secretKeyRef: { name: ods-secret, key: ODS_DB_PASSWORD } }
+            - { name: KEYCLOAK_URL, value: "http://keycloak:8080/auth" }
+            - { name: KEYCLOAK_ADMIN_USER, value: admin }
+            - name: KEYCLOAK_ADMIN_PASSWORD
+              valueFrom: { secretKeyRef: { name: ods-secret, key: ODS_KEYCLOAK_ADMIN_PASSWORD } }
+            - { name: REALM_NAME, value: "$(ODS_REALM)" }
+            - { name: ONBOARDING_DATA_DIR, value: /var/lib/ods }
+            - { name: ODS_FILES_DIR, value: /var/lib/ods/files }
+            - { name: ONBOARDING_PORT, value: "8092" }
+            - name: ODS_SMTP_PASSWORD
+              valueFrom: { secretKeyRef: { name: ods-secret, key: ODS_SMTP_PASSWORD } }
+          ports: [ { containerPort: 8092 } ]
+          volumeMounts:
+            - { name: estado, mountPath: /var/lib/ods }
+      volumes:
+        - { name: estado, persistentVolumeClaim: { claimName: ods-data } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: app, namespace: my-open-dataspace }
+spec:
+  selector: { app: app }
+  ports: [ { port: 8092 } ]
+---
+# ---------------------------------------------------------------- caddy (entrada)
+apiVersion: apps/v1
+kind: Deployment
+metadata: { name: caddy, namespace: my-open-dataspace }
+spec:
+  replicas: 1
+  strategy: { type: Recreate }
+  selector: { matchLabels: { app: caddy } }
+  template:
+    metadata: { labels: { app: caddy } }
+    spec:
+      containers:
+        - name: caddy
+          image: caddy:2.8-alpine
+          command: ["/usr/local/bin/ods-caddy"]
+          env:
+            - name: ODS_DOMAIN
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_DOMAIN } }
+            - name: ODS_TLS
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_TLS } }
+            - name: ODS_ADMIN_EMAIL
+              valueFrom: { configMapKeyRef: { name: ods-config, key: ODS_ADMIN_EMAIL } }
+          ports: [ { containerPort: 80 }, { containerPort: 443 } ]
+          volumeMounts:
+            - { name: ficheros, mountPath: /etc/caddy/Caddyfile, subPath: Caddyfile, readOnly: true }
+            - { name: ficheros, mountPath: /usr/local/bin/ods-caddy, subPath: caddy-entrypoint.sh, readOnly: true }
+            - { name: data, mountPath: /data }
+      volumes:
+        - name: ficheros
+          configMap: { name: ods-caddy, defaultMode: 0555 }
+        - { name: data, persistentVolumeClaim: { claimName: caddy-data } }
+---
+apiVersion: v1
+kind: Service
+metadata: { name: caddy, namespace: my-open-dataspace }
+spec:
+  selector: { app: caddy }
+  ports:
+    - { name: http, port: 80 }
+    - { name: https, port: 443 }

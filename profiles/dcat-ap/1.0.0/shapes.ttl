@@ -1,0 +1,54 @@
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix ods: <urn:ods:> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ods:DatasetShape
+  a sh:NodeShape ;
+  sh:targetClass dcat:Dataset ;
+  sh:property [
+    sh:path dct:identifier ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+  ] ;
+  sh:property [
+    sh:path dct:title ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+  ] ;
+  sh:property [
+    sh:path dct:description ;
+    sh:minCount 1 ;
+    sh:datatype xsd:string ;
+  ] ;
+  sh:property [
+    sh:path dct:publisher ;
+    sh:minCount 1 ;
+  ] ;
+  sh:property [
+    sh:path dct:license ;
+    sh:minCount 1 ;
+  ] ;
+  sh:property [
+    sh:path dct:accessRights ;
+    sh:minCount 1 ;
+    sh:in ("public" "restricted" "contractual-dashboard" "controlled-governed-reuse") ;
+  ] ;
+  sh:property [
+    sh:path dcat:theme ;
+    sh:minCount 1 ;
+  ] ;
+  sh:property [
+    sh:path dcat:keyword ;
+    sh:minCount 1 ;
+  ] ;
+  sh:property [
+    sh:path dcat:mediaType ;
+    sh:minCount 1 ;
+  ] ;
+  sh:property [
+    sh:path ods:deliveryMode ;
+    sh:minCount 1 ;
+    sh:in ("dashboard" "download" "api" "streaming") ;
+  ] .

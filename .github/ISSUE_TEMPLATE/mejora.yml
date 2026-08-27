@@ -1,0 +1,38 @@
+name: Una idea
+description: Algo que el producto debería hacer y no hace.
+labels: ["mejora"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Antes de escribir: hay cosas que están fuera de esta versión **a
+        propósito** —IA, SIMPL, Gaia-X, EUDI, la vertical sanitaria, FIWARE,
+        varios conectores por nodo—. Están en
+        [docs/estado.md](../../blob/main/docs/estado.md), y proponerlas no es
+        perder el tiempo, pero conviene saber que se dejaron fuera queriendo.
+
+  - type: textarea
+    id: que-quieres-hacer
+    attributes:
+      label: Qué quieres hacer
+      description: |
+        El problema, no la solución. Qué intentabas conseguir cuando te
+        encontraste con que no se podía.
+      placeholder: |
+        Quiero que las tres organizaciones del consorcio vean el mismo
+        catálogo sin que cada una tenga que dar de alta a las otras dos a mano.
+    validations:
+      required: true
+
+  - type: textarea
+    id: como-lo-haces-ahora
+    attributes:
+      label: Cómo lo resuelves hoy
+      description: Si tienes un apaño, cuál es. Dice mucho de lo que hace falta.
+
+  - type: checkboxes
+    id: alcance
+    attributes:
+      label: Alcance
+      options:
+        - label: He mirado docs/estado.md y esto no es de lo que se dejó fuera a propósito.
