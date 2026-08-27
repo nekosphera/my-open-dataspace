@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Register and onboard to __BRAND__. Create your account to access connectors and participate in the data space." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="" />
+  <title>My Open Dataspace | Register - Create Account</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./runtime-config.js"></script>
+  <script src="./site-config.js"></script>
+  <script defer src="./registration.js?v=20260502-1"></script>
+  <script>
+    window.DATASPACE_SITE.applyPage({
+      path: "/registro-en.html",
+      title: "Register - Create Account",
+      description: "Register and onboard to __BRAND__. Create your account to access connectors and participate in the data space.",
+      robots: "noindex, follow"
+    });
+  </script>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <h1>Request access to this node</h1>
+    <p>This node has one connector, and registering means becoming one of its participants. Whoever administers the node reviews whether you will operate as provider, consumer, or both.</p>
+  </div>
+
+  <nav class="top-nav">
+    <a class="pill-link" href="./home-en.html">Home</a>
+    <a class="pill-link" href="./login-en.html">Login</a>
+    <a class="pill-link is-active" href="./registro-en.html">Register</a>
+    <a class="pill-link" href="./privacy-en.html">Privacy Policy and Contact</a>
+    <span class="lang-switch" aria-label="Language selector">
+      <a class="pill-link" href="./registro.html">ES</a>
+      <a class="pill-link is-active" href="./registro-en.html">EN</a>
+    </span>
+  </nav>
+
+  <section class="card">
+    <h2>Registration request</h2>
+    <p class="muted">Enter your details, the profile you are asking for, and the captcha. You will be able to sign in once whoever administers the node approves the request.</p>
+    <form id="registerForm" class="grid">
+      <div>
+        <label>First name</label>
+        <input id="registerFirstName" type="text" required placeholder="First name" />
+      </div>
+      <div>
+        <label>Last name</label>
+        <input id="registerLastName" type="text" placeholder="Last name" />
+      </div>
+      <div>
+        <label>Email</label>
+        <input id="registerEmail" type="email" required placeholder="user@company.com" />
+      </div>
+      <div>
+        <label>Password</label>
+        <input id="registerPassword" type="password" required minlength="9" placeholder="Your password" />
+        <small class="muted">At least 9 characters, 1 uppercase letter, 1 number, and 1 special character.</small>
+      </div>
+      <div>
+        <label>Requested profile</label>
+        <select id="registerRoleMode" required>
+          <option value="consumer">Consumer</option>
+          <option value="provider">Provider</option>
+          <option value="both">Provider and consumer</option>
+        </select>
+      </div>
+      <div>
+        <label>Captcha</label>
+        <div id="captchaQuestion" class="muted"></div>
+        <input id="captchaAnswer" type="text" required placeholder="Result" />
+      </div>
+      <div>
+        <button id="registerSubmit" type="submit">Submit request</button>
+      </div>
+    </form>
+    <p id="registerStatus" class="status"></p>
+    <pre id="registerResult" class="muted"></pre>
+    <p class="muted">Whoever administers this node has to approve the request. No notice is sent: come back to this address and try "Sign in" once you have been approved.</p>
+  </section>
+</div>
+</body>
+</html>

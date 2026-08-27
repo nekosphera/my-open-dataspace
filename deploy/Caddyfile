@@ -1,0 +1,55 @@
+# El unico servicio que mira a la red. Todo lo demas se habla por dentro.
+#
+# Con ODS_DOMAIN puesto, Caddy pide el certificado y lo renueva solo, usando
+# ODS_ADMIN_EMAIL para el registro ACME. Sin dominio sirve por HTTP en el
+# puerto local, que es el modo de evaluacion.
+#
+# La direccion del sitio llega en ODS_SITE_ADDRESS, que calcula el arranque
+# (deploy/caddy-entrypoint.sh). No se compone aqui a partir de ODS_DOMAIN
+# porque el `{$VAR:defecto}` de Caddy solo usa el defecto cuando la variable
+# NO esta definida, y la composicion la define siempre: con ODS_DOMAIN vacia
+# la clave del bloque quedaba vacia y Caddy lo leia como un segundo bloque
+# global -- "server block without any key" -- y no arrancaba.
+
+{
+	email {$ODS_ADMIN_EMAIL}
+	admin off
+}
+
+# Lo escribe deploy/caddy-entrypoint.sh en cada arranque: lleva el ajuste de
+# cookies cuando se sirve en claro, y está vacío cuando hay TLS.
+import /etc/caddy/cookies-sin-tls.conf
+
+{$ODS_SITE_ADDRESS::80} {
+	encode zstd gzip
+
+	# La identidad. Keycloak esta configurado con --http-relative-path=/auth,
+	# asi que la ruta que se ve fuera y la de dentro coinciden y no hace
+	# falta reescribir nada.
+	handle /auth/* {
+		reverse_proxy keycloak:8080 {
+			# Sobre HTTP plano hay que quitarle el `Secure` a la cookie de
+			# sesión de Keycloak, o el navegador no la guarda y el formulario
+			# de acceso falla con «cookie_not_found». El arranque escribe aquí
+			# lo que corresponda: nada si hay TLS.
+			import cookies-sin-tls
+		}
+	}
+
+	# La superficie de gestion del conector NO se publica. Quien la quiera
+	# la alcanza por la red interna o por un tunel; abrirla aqui es dar la
+	# consola de administracion del conector a internet.
+
+	# El resto -portal, consola y API- lo sirve la aplicacion.
+	handle {
+		reverse_proxy app:8092
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
+}

@@ -1,0 +1,12 @@
+{
+  "dct:identifier": "urn:catalejo:sample:air-quality",
+  "dct:title": "Air quality, hourly",
+  "dct:description": "Hourly air quality readings from street cabinets",
+  "dct:publisher": "Example City",
+  "dct:license": "https://creativecommons.org/licenses/by/4.0/",
+  "dct:accessRights": "public",
+  "dcat:theme": "https://example.org/theme/environment",
+  "dcat:keyword": "air,quality",
+  "dcat:mediaType": "application/json",
+  "ods:deliveryMode": "api"
+}

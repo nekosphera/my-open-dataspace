@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Secure access to __BRAND__. Authentication with Keycloak and role-based access control." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="" />
+  <title>My Open Dataspace | Login - Secure Access</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./runtime-config.js"></script>
+  <script src="./site-config.js"></script>
+  <script>
+    window.DATASPACE_SITE.applyPage({
+      path: "/login-en.html",
+      title: "Login - Secure Access",
+      description: "Secure access to __BRAND__. Authentication with Keycloak and role-based access control.",
+      robots: "noindex, follow"
+    });
+  </script>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <h1>Connector access</h1>
+    <p>Authentication is handled through federated identity and users are redirected to their assigned connector.</p>
+  </div>
+
+  <nav class="top-nav">
+    <a class="pill-link" href="./home-en.html">Home</a>
+    <a class="pill-link" href="./login-en.html">Login</a>
+    <a class="pill-link" href="./registro-en.html">Register</a>
+    <a class="pill-link" href="./privacy-en.html">Privacy Policy and Contact</a>
+    <span class="lang-switch" aria-label="Language selector">
+      <a class="pill-link" href="./login.html">ES</a>
+      <a class="pill-link is-active" href="./login-en.html">EN</a>
+    </span>
+  </nav>
+
+  <section class="card">
+    <h2>Single access</h2>
+    <div class="action-grid">
+      <article class="action-card">
+        <h3>Sign in</h3>
+        <p class="muted">After authentication, you will be redirected automatically to the connector assigned to your user.</p>
+        <button id="loginBtn" class="btn">Access with federated identity</button>
+      </article>
+    </div>
+    <p id="loginStatus" class="muted"></p>
+  </section>
+</div>
+
+<script type="module">
+  async function loadKeycloak() {
+    const mod = await import("./vendor/keycloak.js");
+    return mod?.default || mod?.Keycloak || window.Keycloak;
+  }
+
+  function normalizeUser(value) {
+    const raw = String(value || "").trim().toLowerCase();
+    if (!raw) return "";
+    return raw;
+  }
+
+  // Sin destinos por nombre. Aqui habia tres correos del proyecto de origen
+  // -- comparados por el principio de la direccion -- que mandaban a
+  // /connector-1, -2 y -3, paginas que este producto no tiene: quien tuviera
+  // la mala suerte de llamarse asi aterrizaba en un 404. Quien decide es
+  // /api/onboarding/connector-page, con los grupos del token; si no contesta,
+  // la pagina publica es la respuesta honesta.
+  function fallbackRedirectForUser() {
+    return "/home-en.html";
+  }
+
+  async function resolveRedirectForUser(username) {
+    const user = normalizeUser(username);
+    if (!user) return "/home-en.html";
+    try {
+      const res = await fetch(`/api/onboarding/connector-page?user=${encodeURIComponent(user)}&lang=en`);
+      if (!res.ok) return fallbackRedirectForUser(user);
+      const data = await res.json();
+      return data?.redirect || fallbackRedirectForUser(user);
+    } catch (e) {
+      console.warn("Could not resolve dynamic redirect", e);
+      return fallbackRedirectForUser(user);
+    }
+  }
+
+  async function createKeycloakClient() {
+    const Keycloak = await loadKeycloak();
+    if (typeof Keycloak !== "function") {
+      throw new Error("Keycloak JS unavailable");
+    }
+
+    return new Keycloak(window.DATASPACE_SITE.keycloakConfig());
+  }
+
+  function clearKeycloakBrowserState() {
+    const stores = [window.sessionStorage, window.localStorage].filter(Boolean);
+    for (const store of stores) {
+      for (let index = store.length - 1; index >= 0; index -= 1) {
+        const key = store.key(index) || "";
+        if (key.includes("keycloak") || key.includes("kc-callback") || key.includes("oauth")) {
+          store.removeItem(key);
+        }
+      }
+    }
+  }
+
+  function cleanCurrentUrlIfNeeded() {
+    const current = new URL(window.location.href);
+    const hasAuthError = current.searchParams.has("error") || current.searchParams.has("error_description");
+    if (!hasAuthError) return false;
+    clearKeycloakBrowserState();
+    window.history.replaceState({}, document.title, `${window.location.origin}${window.location.pathname}`);
+    return true;
+  }
+
+  function isAuthCallback() {
+    const current = new URL(window.location.href);
+    const hash = new URLSearchParams(String(window.location.hash || "").replace(/^#/, ""));
+    return current.searchParams.has("code")
+      || current.searchParams.has("state")
+      // Keycloak returns login_required in the query string, not the fragment.
+      // Leaving it out meant a returning error looked like an ordinary visit:
+      // the page did not clean the stale URL and did not resume the flow.
+      || current.searchParams.has("error")
+      || hash.has("code")
+      || hash.has("state")
+      || hash.has("error");
+  }
+
+  function enabledFederatedProviders() {
+    const configured = window.DATASPACE_SITE?.config?.federatedIdentityProviders || {};
+    if (Array.isArray(configured)) {
+      return new Set(configured.map((value) => String(value || "").trim().toLowerCase()).filter(Boolean));
+    }
+    return new Set(Object.entries(configured)
+      .filter(([, value]) => value === true || value === "true" || value?.enabled === true)
+      .map(([key]) => String(key || "").trim().toLowerCase())
+      .filter(Boolean));
+  }
+
+  function isFederatedProviderEnabled(alias) {
+    return enabledFederatedProviders().has(String(alias || "").trim().toLowerCase());
+  }
+
+  function identityProviderHint() {
+    const current = new URL(window.location.href);
+    const raw = current.searchParams.get("idp_hint") || current.searchParams.get("idp") || "";
+    const normalized = String(raw).trim().toLowerCase();
+    if (!/^[a-z0-9._-]+$/.test(normalized)) return "";
+    if (!isFederatedProviderEnabled(normalized)) return "";
+    return normalized;
+  }
+
+
+  async function handleAuthenticatedUser(kc) {
+    // Prefer token claims because they are available immediately after login.
+    let username = kc.tokenParsed?.email || kc.tokenParsed?.preferred_username || kc.tokenParsed?.name || "";
+    if (!username) {
+      try {
+        const profile = await kc.loadUserProfile();
+        username = profile?.email || profile?.username || "";
+      } catch (e) {
+        console.warn("Could not read Keycloak profile", e);
+      }
+    }
+    const target = await resolveRedirectForUser(username);
+    window.location.href = `${window.location.origin}${target}`;
+  }
+
+  function setLoginButtonsDisabled(disabled) {
+    document.querySelectorAll("#loginBtn").forEach((button) => {
+      button.disabled = disabled;
+    });
+  }
+
+  async function runLoginFlow(forcedIdpHint = "") {
+    const statusEl = document.getElementById("loginStatus");
+    if (forcedIdpHint && !isFederatedProviderEnabled(forcedIdpHint)) {
+      statusEl.textContent = "This federated identity provider is not configured yet.";
+      return;
+    }
+    setLoginButtonsDisabled(true);
+    const cleaned = cleanCurrentUrlIfNeeded();
+    if (!isAuthCallback() && !cleaned) {
+      clearKeycloakBrowserState();
+    }
+    const kc = await createKeycloakClient();
+
+    // No onLoad here. With onLoad: "check-sso" and no silentCheckSsoRedirectUri
+    // the adapter takes the doLogin(false) branch - a full-page redirect with
+    // prompt=none - so the browser leaves before anything below this line runs,
+    // and kc.login() further down, the only call that can ever show a username
+    // and password form, was unreachable. A visitor with no session clicked the
+    // button, went to the identity server and came straight back, and the page
+    // asked them for nothing. init() still completes a callback present in the
+    // URL, which is what makes the returning half of the flow work.
+    const authenticated = await kc.init({
+      checkLoginIframe: false,
+      pkceMethod: "S256"
+    });
+
+    if (authenticated) {
+      statusEl.textContent = "Session detected. Redirecting to your assigned connector...";
+      await handleAuthenticatedUser(kc);
+      return;
+    }
+
+    statusEl.textContent = cleaned
+      ? "Restarting authentication with a clean session..."
+      : "Opening federated authentication...";
+    const loginOptions = {
+      redirectUri: `${window.location.origin}${window.location.pathname}`,
+      prompt: "login",
+      scope: "openid profile email"
+    };
+    const idpHint = forcedIdpHint || identityProviderHint();
+    if (idpHint) {
+      loginOptions.idpHint = idpHint;
+    }
+    await kc.login(loginOptions);
+  }
+
+  document.getElementById("loginBtn").addEventListener("click", () => {
+    runLoginFlow().catch((error) => {
+      console.error(error);
+      setLoginButtonsDisabled(false);
+      document.getElementById("loginStatus").textContent = "Login could not be completed.";
+    });
+  });
+
+
+  if (isAuthCallback() || identityProviderHint()) {
+    runLoginFlow().catch(() => {
+      setLoginButtonsDisabled(false);
+    });
+  }
+</script>
+</body>
+</html>

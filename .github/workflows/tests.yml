@@ -1,0 +1,162 @@
+name: Pruebas
+
+# La puerta de calidad. Corre en cada empujón y en cada propuesta de cambio,
+# y es lo mismo que corre antes de publicar una versión: una versión no puede
+# pasar por una puerta distinta de la que pasa el trabajo diario.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  unidad:
+    name: Unidad y comprobaciones del árbol
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install -r app/requirements.txt -r federation/requirements.txt
+
+      # jq lo necesitan las pruebas del federador por delta, que en una máquina
+      # sin él se saltan en silencio. En CI no se saltan.
+      - name: Instalar jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: pytest
+        run: python -m pytest tests -v --ignore=tests/e2e
+
+      - name: Ninguna prueba se ha saltado sin decirlo
+        run: |
+          saltadas=$(python -m pytest tests --ignore=tests/e2e -q 2>&1 | grep -oE '[0-9]+ skipped' || true)
+          if [ -n "${saltadas}" ]; then
+            echo "::warning::Se han saltado pruebas en CI: ${saltadas}"
+          fi
+
+  guiones:
+    name: Guiones de shell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: shellcheck
+        run: |
+          sudo apt-get update && sudo apt-get install -y shellcheck
+          # SC1091 y SC1090: el federador hace `source` de un fichero de
+          # entorno cuya ruta llega por variable. Eso es lo que permite
+          # ejecutarlo suelto contra otra configuración, y shellcheck no
+          # puede seguirlo por definición.
+          find . -name '*.sh' -not -path './node_modules/*' -print0 \
+            | xargs -0 shellcheck --severity=warning --exclude=SC1091,SC1090
+
+      - name: Los guiones arrancan con bash
+        run: |
+          for guion in $(find . -name '*.sh' -not -path './node_modules/*'); do
+            bash -n "${guion}" || exit 1
+          done
+
+
+      # Sobre el árbol recién clonado, que es donde importa: una máquina
+      # de desarrollo con core.filemode=false no registra `chmod +x` en el
+      # índice, y quien clone se encuentra «Permission denied» en el
+      # primer comando del README.
+      - name: Los guiones se pueden ejecutar
+        run: |
+          fallos=0
+          for guion in $(git ls-files '*.sh'); do
+            if [ ! -x "${guion}" ]; then
+              echo "::error file=${guion}::sin bit de ejecución en un clon limpio"
+              fallos=1
+            fi
+          done
+          exit "${fallos}"
+
+  extremo-a-extremo:
+    name: Recorrido completo
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Levantar el nodo
+        run: |
+          cp .env.example .env
+          # Contraseñas de usar y tirar, generadas aquí: un secreto escrito en
+          # un flujo de trabajo es un secreto publicado.
+          for clave in ODS_DB_PASSWORD ODS_KEYCLOAK_ADMIN_PASSWORD ODS_FUSEKI_ADMIN_PASSWORD; do
+            valor=$(openssl rand -hex 16)
+            sed -i "s|^${clave}=.*|${clave}=\"${valor}\"|" .env
+          done
+          sed -i 's|^ODS_ADMIN_EMAIL=.*|ODS_ADMIN_EMAIL="ci@example.invalid"|' .env
+          docker compose up -d --build
+
+      - name: El recorrido completo
+        run: python tests/e2e/golden_path.py http://localhost:8080
+
+      # El alta y el acceso, por el formulario, como una persona. Va aparte
+      # porque el recorrido completo usa un token de cuenta de servicio y por
+      # eso nunca ejerció el login: un adaptador de Keycloak borrado y una
+      # cookie marcada Secure sobre HTTP plano le pasaron por delante sin
+      # tocarlo.
+      - name: Alta y acceso
+        run: python tests/e2e/login_journey.py http://localhost:8080
+
+      # Y lo mismo con un navegador de verdad, que es lo unico que ejecuta el
+      # JavaScript de la consola y del acceso. Las dos pruebas de arriba daban
+      # verde mientras la consola no podia leer ni publicar nada, quien
+      # administra el nodo aterrizaba en la pagina publica y no habia ninguna
+      # pantalla donde aprobar un alta: nada de eso se ve sin abrir el
+      # navegador.
+      #
+      # `--headless` necesita Chrome; el corredor de GitHub lo trae. Si algun
+      # dia no estuviera, la prueba sale con codigo 2 y se ve como saltada,
+      # nunca como verde.
+      - name: Alta y acceso en un navegador
+        run: |
+          python -m pip install --quiet websocket-client
+          # `set +e` a proposito: el paso corre con `bash -e`, asi que sin esto
+          # el fallo aborta antes de leer el codigo y el 2 de «saltada» nunca
+          # llegaria a distinguirse de un fallo de verdad.
+          set +e
+          python tests/e2e/navegador_alta_y_acceso.py --base http://localhost:8080
+          codigo=$?
+          set -e
+          if [[ ${codigo} -eq 2 ]]; then
+            echo "::warning::la prueba de navegador se salto; no la des por pasada"
+            exit 0
+          fi
+          exit ${codigo}
+
+      # Un conector por participante: dos personas del mismo nodo, una publica
+      # y la otra negocia y descarga. Son los criterios 10 a 13 de la sección 12,
+      # que anadió la enmienda 16, y viven enteros entre el token y la consola.
+      - name: Un conector por participante
+        run: |
+          set +e
+          python tests/e2e/navegador_conector_por_participante.py --base http://localhost:8080
+          codigo=$?
+          set -e
+          if [[ ${codigo} -eq 2 ]]; then
+            echo "::warning::la prueba de conector por participante se saltó; no la des por pasada"
+            exit 0
+          fi
+          exit ${codigo}
+
+      - name: Registros si algo ha fallado
+        if: failure()
+        run: docker compose logs --tail 200
+
+      - name: Bajar
+        if: always()
+        run: docker compose down -v

@@ -1,0 +1,31 @@
+{
+  "@context": {
+    "odrl": "http://www.w3.org/ns/odrl/2/",
+    "dct": "http://purl.org/dc/terms/",
+    "ods": "urn:ods:"
+  },
+  "@id": "urn:ods:profile:odrl:1.0.0",
+  "@type": "dct:Standard",
+  "dct:title": "My Open Dataspace ODRL policy profile",
+  "dct:hasVersion": "1.0.0",
+  "dct:requires": [
+    "odrl:permission",
+    "odrl:prohibition",
+    "odrl:duty",
+    "ods:purpose",
+    "ods:policyProfile",
+    "ods:classificationKey"
+  ],
+  "ods:controlledActions": [
+    "read",
+    "use",
+    "analyze",
+    "visualize",
+    "download",
+    "attribution",
+    "keep-source-link",
+    "sell",
+    "redistribute",
+    "reidentify"
+  ]
+}
