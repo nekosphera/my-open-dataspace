@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Data space</title>
+  <meta name="description" content="Publish data products with their policies, negotiate contracts and browse what every node in the data space offers." />
+  <link rel="canonical" href="" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./runtime-config.js"></script>
+  <script src="./site-config.js"></script>
+  <script>
+    window.DATASPACE_SITE.applyPage({
+      path: "./home-en.html",
+      title: "Data space",
+      description: "Publish data products with their policies, negotiate contracts and browse what every node in the data space offers."
+    });
+  </script>
+</head>
+<body>
+<div class="container">
+
+  <header class="site-header">
+    <img data-site-logo-img alt="" />
+    <div>
+      <p class="eyebrow">DATA SPACE</p>
+      <h1 data-site-brand></h1>
+    </div>
+  </header>
+
+  <nav class="top-nav">
+    <a class="pill-link is-active" href="./home-en.html">Home</a>
+    <a class="pill-link" href="./login-en.html">Sign in</a>
+    <a class="pill-link" href="./registro-en.html">Register</a>
+    <a class="pill-link" href="./privacy-en.html">Privacy</a>
+    <span class="lang-switch" aria-label="Language selector">
+      <a class="pill-link" href="./home.html">ES</a>
+      <a class="pill-link is-active" href="./home-en.html">EN</a>
+    </span>
+  </nav>
+
+  <section class="hero">
+    <h2 data-site-brand></h2>
+    <p>A node of a data space: here data products are published with their policy and their contract, access is negotiated, and what every registered node offers is shown on a single screen.</p>
+    <p class="hero-actions">
+      <a class="btn" href="./login-en.html">Go to the console</a>
+      <a class="btn secondary" href="./registro-en.html">Request access</a>
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Data space catalogue</h2>
+    <p class="muted">What this node offers and what the registered nodes offer, each with whoever offers it. This page is browse-only: negotiating a contract and downloading the data happen in the console, signed in.</p>
+    <button id="reloadFederatedCatalogBtn" class="secondary" type="button">Reload</button>
+    <div id="federatedCatalogSummary" class="status muted"></div>
+    <table id="federatedCatalogTable"></table>
+  </section>
+
+  <section class="card">
+    <h2>What this is</h2>
+    <p>A data space is not an open catalogue: it is a place where access to each piece of data is governed by a policy and closed by a contract. Publishing is not exposing, and downloading requires having negotiated.</p>
+    <p>Each node belongs to whoever installed it. This node publishes its own offer and, when it registers another node's address, that node's offer joins this catalogue. That is how several organisations that installed this separately become one data space.</p>
+    <p class="muted">Two controls hold that up, and both can be checked: a completed negotiation is required to download, and delivery destinations are restricted. Every operation and every refusal is recorded.</p>
+  </section>
+
+  <section class="card">
+    <h2>Scope</h2>
+    <p class="muted">This node runs My Open Dataspace, which demonstrates concrete publication, discovery, negotiation, transfer and evidence scenarios. It does not certify conformance, does not guarantee universal interoperability, and does not accredit membership of any initiative.</p>
+  </section>
+
+  <footer class="site-footer">
+    <p class="muted"><span data-site-brand></span> · <a href="./privacy-en.html">Privacy</a> · <a data-site-contact-email href="#"></a></p>
+    <p class="muted" data-site-legal-notice></p>
+  </footer>
+
+</div>
+<script src="./home-catalog.js"></script>
+</body>
+</html>

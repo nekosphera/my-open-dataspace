@@ -1,0 +1,132 @@
+{
+  "realm": "dataspace",
+  "enabled": true,
+  "displayName": "My Open Dataspace",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "verifyEmail": false,
+  "editUsernameAllowed": false,
+  "sslRequired": "external",
+  "accessTokenLifespan": 900,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "dataspace-user",
+        "description": "Lectura de la superficie de gestion del conector"
+      },
+      {
+        "name": "dataspace-negotiator",
+        "description": "Puede abrir negociaciones de contrato"
+      },
+      {
+        "name": "dataspace-admin",
+        "description": "Alta y modificacion de activos, politicas y contratos"
+      },
+      {
+        "name": "connector-user",
+        "description": "Pertenece al conector de este nodo"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "dataspace-users",
+      "realmRoles": [
+        "dataspace-user"
+      ]
+    },
+    {
+      "name": "dataspace-negotiators",
+      "realmRoles": [
+        "dataspace-user",
+        "dataspace-negotiator"
+      ]
+    },
+    {
+      "name": "dataspace-admins",
+      "realmRoles": [
+        "dataspace-user",
+        "dataspace-negotiator",
+        "dataspace-admin"
+      ]
+    },
+    {
+      "name": "connector-users",
+      "realmRoles": [
+        "connector-user"
+      ]
+    }
+  ],
+  "defaultGroups": [
+    "dataspace-users"
+  ],
+  "clients": [
+    {
+      "clientId": "dataspace-ui",
+      "name": "Consola del participante",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "/*"
+      ],
+      "webOrigins": [
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256",
+        "post.logout.redirect.uris": "/*"
+      },
+      "protocolMappers": [
+        {
+          "name": "groups",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-group-membership-mapper",
+          "consentRequired": false,
+          "config": {
+            "full.path": "false",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "claim.name": "groups"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "edc-connector",
+      "name": "Conector del nodo",
+      "description": "La cuenta de servicio con la que el conector y el federador hablan con la superficie de gestion.",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false
+    }
+  ],
+  "smtpServer": {},
+  "browserSecurityHeaders": {
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self'; object-src 'none';",
+    "xFrameOptions": "SAMEORIGIN",
+    "xContentTypeOptions": "nosniff"
+  },
+  "users": [
+    {
+      "username": "service-account-edc-connector",
+      "enabled": true,
+      "serviceAccountClientId": "edc-connector",
+      "realmRoles": [
+        "dataspace-user",
+        "dataspace-negotiator",
+        "dataspace-admin"
+      ]
+    }
+  ]
+}

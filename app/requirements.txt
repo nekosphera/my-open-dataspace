@@ -1,0 +1,4 @@
+pyjwt[crypto]>=2.8,<3
+cryptography>=42,<46
+rdflib>=7,<8
+pyshacl>=0.30,<1

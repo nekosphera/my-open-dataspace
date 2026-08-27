@@ -1,0 +1,44 @@
+# Configuración local — nunca se versiona en este repositorio.
+# `.env.*` cubre tambien los ficheros de un segundo nodo de pruebas, que
+# llevan contraseñas dentro: `.env` a secas solo casa con ese nombre exacto.
+.env
+.env.*
+!.env.example
+
+# Estado del nodo. Anclado a la raiz con /: sin la barra de delante, `data/`
+# casa con cualquier carpeta llamada asi a cualquier profundidad, y se llevaba
+# por delante seed/data/ -- los ficheros de ejemplo que el manifiesto publica.
+# Quien clonara el repositorio se encontraba un manifiesto apuntando a
+# ficheros que no estaban.
+/data/
+/files/
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# Java
+target/
+*.class
+
+# Node
+node_modules/
+
+# Marca propia de quien instala
+app/ui/assets/brand/
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Salidas de prueba
+test-results/
+playwright-report/
+
+# Configuracion de interfaz generada en el arranque
+app/ui/runtime-config.js

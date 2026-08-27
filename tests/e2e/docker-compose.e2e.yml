@@ -1,0 +1,21 @@
+# Runs the interface end-to-end harness without installing a toolchain on the
+# host. The image is pinned to the same Playwright version as the dev
+# dependency, so a local run and a pipeline run exercise identical browsers.
+#
+#   docker compose -f tests/e2e/docker-compose.e2e.yml run --rm e2e
+#
+# Target a subset with PARTICIPANT_E2E_TARGETS; omit it to cover every domain.
+
+services:
+  e2e:
+    image: mcr.microsoft.com/playwright:v1.62.1-noble
+    working_dir: /work
+    volumes:
+      - ../..:/work
+    environment:
+      CI: ${CI:-}
+      PARTICIPANT_E2E_DOMAINS: ${PARTICIPANT_E2E_DOMAINS:-}
+      PARTICIPANT_E2E_TARGETS: ${PARTICIPANT_E2E_TARGETS:-}
+      PARTICIPANT_E2E_USERNAME: ${PARTICIPANT_E2E_USERNAME:-}
+      PARTICIPANT_E2E_PASSWORD: ${PARTICIPANT_E2E_PASSWORD:-}
+    command: ["sh", "-c", "npm ci --no-audit --no-fund && npx playwright test"]

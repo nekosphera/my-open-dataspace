@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Connector 1 Console</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./runtime-config.js?v=20260419-9"></script>
+  <script src="./site-config.js?v=20260419-9"></script>
+  <script>
+    window.DATASPACE_SITE.applyPage({
+      path: "/console-en.html",
+      title: "Connector 1 Console",
+      robots: "noindex, follow"
+    });
+    window.switchOperationTab = function (mode) {
+      var providerBtn = document.getElementById("operationProviderBtn");
+      var consumerBtn = document.getElementById("operationConsumerBtn");
+      var providerPanel = document.getElementById("operationProviderPanel");
+      var consumerPanel = document.getElementById("operationConsumerPanel");
+      var showConsumer = mode === "consumer";
+      if (!providerBtn || !consumerBtn || !providerPanel || !consumerPanel) return;
+      providerBtn.classList.toggle("is-active", !showConsumer);
+      providerBtn.setAttribute("aria-selected", showConsumer ? "false" : "true");
+      consumerBtn.classList.toggle("is-active", showConsumer);
+      consumerBtn.setAttribute("aria-selected", showConsumer ? "true" : "false");
+      providerPanel.classList.toggle("is-active", !showConsumer);
+      providerPanel.hidden = showConsumer;
+      consumerPanel.classList.toggle("is-active", showConsumer);
+      consumerPanel.hidden = !showConsumer;
+    };
+  </script>
+</head>
+<body>
+<div class="container">
+  <nav class="top-nav">
+    <a class="pill-link" href="./home-en.html">Home</a>
+    <a class="pill-link" href="./login-en.html">Login</a>
+    <span class="lang-switch" aria-label="Language selector">
+      <a class="pill-link" href="./console.html">ES</a>
+      <a class="pill-link is-active" href="./console-en.html">EN</a>
+    </span>
+  </nav>
+
+  <h1>Connector 1</h1>
+  <p class="muted">Endpoint (proxy): <strong>/api/connector</strong></p>
+
+  <div class="tab-nav" role="tablist" aria-label="Connector 1 sections">
+    <button id="tabMainBtn" class="tab-btn is-active" type="button" role="tab" aria-controls="tabMainPanel" aria-selected="true">Operation</button>
+    <button id="tabAuditBtn" class="tab-btn" type="button" role="tab" aria-controls="tabAuditPanel" aria-selected="false">Audit</button>
+    <button id="tabUsersBtn" class="tab-btn" type="button" role="tab" aria-controls="tabUsersPanel" aria-selected="false">Users and requests</button>
+  </div>
+
+  <div id="tabMainPanel" class="tab-panel is-active" role="tabpanel" aria-labelledby="tabMainBtn">
+  <div id="operationTabNav" class="tab-nav" role="tablist" aria-label="Connector operation areas">
+    <button id="operationProviderBtn" class="tab-btn is-active" type="button" role="tab" aria-controls="operationProviderPanel" aria-selected="true" onclick="window.switchOperationTab('provider')">Data provider</button>
+    <button id="operationConsumerBtn" class="tab-btn" type="button" role="tab" aria-controls="operationConsumerPanel" aria-selected="false" onclick="window.switchOperationTab('consumer')">Consumption and catalog</button>
+  </div>
+  <div id="operationProviderPanel" class="tab-panel is-active" role="tabpanel" aria-labelledby="operationProviderBtn">
+  <div class="card">
+    <h2>Guided flow</h2>
+    <div class="asset-stage-row flow-stage-row">
+      <div id="flowStageDocument" class="asset-stage is-active"><span>1</span><strong>Document analyzed</strong></div>
+      <div id="flowStageMetadata" class="asset-stage"><span>2</span><strong>Metadata proposed</strong></div>
+      <div id="flowStagePolicy" class="asset-stage"><span>3</span><strong>Policy proposed</strong></div>
+      <div id="flowStageReady" class="asset-stage"><span>4</span><strong>Ready to create</strong></div>
+    </div>
+    <p id="flowStageStatus" class="muted">Start by pasting a valid resource URL to chain the full analysis.</p>
+  </div>
+  <div class="card">
+    <h2>Create data asset</h2>
+    <div class="asset-stage-row">
+      <div id="assetStageUrl" class="asset-stage is-active"><span>1</span><strong>Paste URL</strong></div>
+      <div id="assetStageReview" class="asset-stage"><span>2</span><strong>Analyze and review</strong></div>
+      <div id="assetStageCreate" class="asset-stage"><span>3</span><strong>Create asset</strong></div>
+    </div>
+    <p class="muted">Recommended formats for analysis: `.pdf`, `.txt`, `.md`, `.csv`, `.xls`, `.xlsx`, `.doc`, `.docx`.</p>
+    <form id="assetForm" class="grid">
+      <div style="grid-column: 1 / -1;"><label>Resource base URL</label><input id="assetBaseUrl" required placeholder="https://your-domain/objects/assets/document.pdf"/></div>
+      <div style="grid-column: 1 / -1; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <button id="analyzeAssetDocumentBtn" type="button" class="secondary">Analyze URL</button>
+        <span class="muted">Analyze the URL first, review the fields and create the asset when everything looks right.</span>
+        <span id="assetDocumentStatus" class="muted">Waiting for a URL to analyze.</span>
+      </div>
+      <div><label>Name</label><input id="assetName" value=""/></div>
+      <div><label>Description</label><input id="assetDescription" value=""/></div>
+      <div><label>DCAT-AP identifier</label><input id="assetIdentifier" data-site-identifier-prefix value="urn:ods:dataset:"/></div>
+      <div><label>DCAT-AP keywords (comma-separated)</label><input id="assetKeywords" value=""/></div>
+      <div><label>DCAT-AP theme</label><input id="assetTheme" value=""/></div>
+      <div><label>Language</label><input id="assetLanguage" value="en"/></div>
+      <div><label>License</label><input id="assetLicense" value="https://creativecommons.org/licenses/by-nc/4.0/"/></div>
+      <div><label>Publisher</label><input id="assetPublisher" data-site-publisher value="My Open Dataspace"/></div>
+      <div><label>Spatial coverage</label><input id="assetSpatial" value="EU"/></div>
+      <div><label>Temporal start (ISO8601)</label><input id="assetTemporalStart" value="2026-01-01"/></div>
+      <div><label>Temporal end (ISO8601)</label><input id="assetTemporalEnd" value="2026-12-31"/></div>
+      <div><label>Distribution format</label><input id="assetFormat" value="application/pdf"/></div>
+      <div><label>Media type</label><input id="assetMediaType" value="application/pdf"/></div>
+      <div><label>Access rights</label><input id="assetAccessRights" value="public"/></div>
+      <div><button type="submit">Create Asset</button></div>
+    </form>
+    <div id="assetAuditPanel" class="card" style="margin-top:1rem;">
+      <h3>Document audit report</h3>
+      <p id="assetAuditSummary" class="muted">Paste a valid URL to generate the analysis and metadata suggestions automatically.</p>
+      <div id="assetAuditMeta" class="muted"></div>
+      <div id="assetAuditReasoning"></div>
+      <div id="assetAuditRecommendations"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Create Policy</h2>
+    <div class="asset-stage-row">
+      <div id="policyStageUrl" class="asset-stage is-active"><span>1</span><strong>URL or resource</strong></div>
+      <div id="policyStageReview" class="asset-stage"><span>2</span><strong>Analyze and review</strong></div>
+      <div id="policyStageCreate" class="asset-stage"><span>3</span><strong>Create policy</strong></div>
+    </div>
+    <form id="policyForm" class="grid">
+      <div style="grid-column: 1 / -1;"><label>URL reused from the data asset</label><input id="policySourceUrl" required readonly placeholder="Filled automatically from the data asset"/></div>
+      <div style="grid-column: 1 / -1; display:flex; gap:0.75rem; align-items:center; flex-wrap:wrap;">
+        <button id="analyzePolicyBtn" type="button" class="secondary">Regenerate policy</button>
+        <span class="muted">The policy reuses the document analysis and is proposed automatically from the same resource.</span>
+        <span id="policyDocumentStatus" class="muted">The policy will be generated from the data asset analysis.</span>
+      </div>
+      <div><label>Name</label><input id="policyName" required value="Policy C1"/></div>
+      <div><label>License URL</label><input id="policyLicenseUrl" value=""/></div>
+      <div><label>Usage purpose</label><input id="policyPurpose" value=""/></div>
+      <div><label>Geographic scope</label><input id="policyGeographicScope" value="EU"/></div>
+      <div><label>Retention (days, 0 = n/a)</label><input id="policyRetentionDays" type="number" min="0" value="0"/></div>
+      <div><label>Internal use</label><input id="policyInternalUse" value="allowed-with-traceability"/></div>
+      <div><label>AI usage</label><input id="policyAiUsage" value="review-required"/></div>
+      <div><label>Redistribution / onward transfer</label><input id="policyRedistributionMode" value="contract-only"/></div>
+      <div><label>Onward transfer</label><input id="policyOnwardTransfer" value="contract-only"/></div>
+      <div><label>Commercial use</label><input id="policyCommercialUse" value="review-required"/></div>
+      <div><label>Anonymization required</label><input id="policyAnonymization" value="not-required"/></div>
+      <div><label>Attribution mode</label><input id="policyAttributionMode" value="source-link-and-publisher"/></div>
+      <div><label>Notice of changes</label><input id="policyNoticeOfChanges" value="required-for-derived-material"/></div>
+      <div><label>Rate limit compliance</label><input id="policyRateLimitCompliance" value="not-applicable"/></div>
+      <div><label>Refresh expectation</label><input id="policyDataRefreshExpectation" value="snapshot-or-versioned-release"/></div>
+      <div style="grid-column: 1 / -1;"><label>Permitted actions (comma)</label><input id="policyPermittedActions" value="use, read, reproduce"/></div>
+      <div style="grid-column: 1 / -1;"><label>Prohibited actions (comma)</label><input id="policyProhibitedActions" value="sell"/></div>
+      <div style="grid-column: 1 / -1;"><label>Duties / mandatory clauses (comma)</label><input id="policyDuties" value="attribution, keep-source-link"/></div>
+      <div style="grid-column: 1 / -1;"><label>Security measures</label><input id="policySecurityMeasures" value="signed-traceability, access-logging"/></div>
+      <div style="grid-column: 1 / -1;"><label>Legal / clause summary</label><textarea id="policyClausesSummary" rows="4"></textarea></div>
+      <div><button type="submit">Create Policy</button></div>
+    </form>
+    <div id="policyAuditPanel" class="card" style="margin-top:1rem;">
+      <h3>Suggested policy report</h3>
+      <p id="policyAuditSummary" class="muted">Analyze a URL to propose a policy aligned with the resource content.</p>
+      <div id="policyAuditMeta" class="muted"></div>
+      <div id="policyAuditReasoning"></div>
+      <div id="policyAuditRecommendations"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Create Contract</h2>
+    <form id="contractForm" class="grid">
+      <div><label>Data asset</label><select id="contractAssetIdSelect" required></select></div>
+      <div><label>Policy</label><select id="contractPolicyIdSelect" required></select></div>
+      <div><button type="submit">Create Contract</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>View my assets</h2>
+    <button id="reloadBtn">Reload</button>
+    <h3>Assets</h3><table id="assetsTable"></table>
+    <h3>Policies</h3><table id="policiesTable"></table>
+    <h3>Contracts</h3><table id="contractsTable"></table>
+    <h3>Negotiations</h3><table id="negotiationsTable"></table>
+  </div>
+
+  </div>
+  <div id="operationConsumerPanel" class="tab-panel" role="tabpanel" aria-labelledby="operationConsumerBtn" hidden>
+
+  <div class="card">
+    <h2>Federated catalog</h2>
+    <p class="muted">From this connector you can accept policies and download resources after a completed negotiation.</p>
+    <button id="reloadFederatedBtn">Reload federated</button>
+    <table id="federatedTable"></table>
+  </div>
+
+  </div>
+
+  <div id="status" class="status"></div>
+  </div>
+
+  <div id="tabAuditPanel" class="tab-panel" role="tabpanel" aria-labelledby="tabAuditBtn" hidden>
+    <div class="card">
+      <h2>Transaction audit</h2>
+      <p class="muted">Ledger across all deployed connectors.</p>
+      <button id="reloadConnectorAuditBtn" class="secondary" type="button">Reload audit</button>
+      <div id="connectorAuditStatus" class="status muted"></div>
+      <table id="connectorAuditTable"></table>
+    </div>
+  </div>
+
+  <div id="tabUsersPanel" class="tab-panel" role="tabpanel" aria-labelledby="tabUsersBtn" hidden>
+    <div class="card">
+      <h2>Pending requests</h2>
+      <p class="muted">Review who is requesting provider, consumer, or both access. The connector is deployed only after approval.</p>
+      <button id="reloadConnectorRequestsBtn" class="secondary" type="button">Reload requests</button>
+      <div id="connectorRequestsStatus" class="status muted"></div>
+      <table id="connectorRequestsTable"></table>
+    </div>
+    <div class="card">
+      <h2>Users and deployed connectors</h2>
+      <p class="muted">Approved connectors with identity, contact email and assigned operational role.</p>
+      <button id="reloadConnectorDirectoryBtn" class="secondary" type="button">Reload connectors</button>
+      <div id="connectorDirectoryStatus" class="status muted"></div>
+      <table id="connectorDirectoryTable"></table>
+    </div>
+  </div>
+</div>
+
+<script>
+  window.CONNECTOR_CONFIG = {
+    id: "connector",
+    lang: "en",
+    label: "Connector",
+    baseUrl: "/api/connector",
+    features: {
+      create: true,
+      myAssets: true,
+      federated: true,
+      allowNegotiate: true,
+      allowDownload: true
+    },
+    auth: {
+      enabled: true,
+      url: window.DATASPACE_SITE.config.authBaseUrl,
+      realm: "dataspace",
+      clientId: "dataspace-ui",
+      refreshSeconds: 30
+    },
+    fusekiQueryUrl: "/fuseki/dataspace/query",
+    fusekiUser: "admin",
+    fusekiPassword: "",
+    // Lo rellena la API con la lista de nodos conocidos de este nodo.
+    // Aqui solo va el propio: un nodo recien instalado no conoce a nadie
+    // mas todavia, y ofrecer negociar contra conectores que no existen
+    // es lo que hacia la lista escrita a mano que habia aqui.
+    negotiationTargets: [
+      { id: "connector", label: "Connector", baseUrl: "/api/connector", local: true }
+    ]
+  };
+</script>
+<script src="./app.js?v=20260731-2"></script>
+<script src="./console-audit.js?v=20260502-2"></script>
+</body>
+</html>

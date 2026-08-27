@@ -1,0 +1,40 @@
+{
+  "version": "1.0.0",
+  "vocabularies": [
+    {
+      "id": "ods-terms",
+      "title": "My Open Dataspace terms",
+      "version": "1.0.0",
+      "status": "active",
+      "formats": ["jsonld"],
+      "namespace": "urn:ods:",
+      "profileUrl": "/profiles/ns.jsonld",
+      "externalAlignments": [
+        "http://www.w3.org/ns/dcat#",
+        "http://www.w3.org/ns/odrl/2/"
+      ]
+    },
+    {
+      "id": "dcat-ap",
+      "title": "DCAT-AP profile",
+      "version": "1.0.0",
+      "status": "active",
+      "formats": ["jsonld", "ttl"],
+      "profileUrl": "/profiles/dcat-ap/1.0.0/profile.jsonld",
+      "shapesUrl": "/profiles/dcat-ap/1.0.0/shapes.ttl",
+      "externalAlignments": [
+        "https://semiceu.github.io/DCAT-AP/releases/3.0.0/",
+        "http://www.w3.org/ns/dcat#"
+      ]
+    },
+    {
+      "id": "odrl",
+      "title": "ODRL policy profile",
+      "version": "1.0.0",
+      "status": "active",
+      "formats": ["jsonld"],
+      "profileUrl": "/profiles/odrl/1.0.0/odrl-profile.jsonld",
+      "externalAlignments": ["http://www.w3.org/ns/odrl/2/"]
+    }
+  ]
+}

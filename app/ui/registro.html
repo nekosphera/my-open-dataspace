@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="description" content="Registro y onboarding en __BRAND__. Crea tu cuenta para acceder a conectores y participar en el espacio de datos." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="" />
+  <title>My Open Dataspace | Registro - Crear Cuenta</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./runtime-config.js"></script>
+  <script src="./site-config.js"></script>
+  <script defer src="./registration.js?v=20260502-1"></script>
+  <script>
+    window.DATASPACE_SITE.applyPage({
+      path: "/registro.html",
+      title: "Registro - Crear Cuenta",
+      description: "Registro y onboarding en __BRAND__. Crea tu cuenta para acceder a conectores y participar en el espacio de datos.",
+      robots: "noindex, follow"
+    });
+  </script>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <h1>Registro de nuevo conector</h1>
+    <p>El registro ahora genera una solicitud. Connector-1 revisará si quieres operar como proveedor, consumidor o ambos antes de desplegar tu conector.</p>
+  </div>
+
+  <nav class="top-nav">
+    <a class="pill-link" href="./home.html">Inicio</a>
+    <a class="pill-link" href="./login.html">Login</a>
+    <a class="pill-link is-active" href="./registro.html">Registro</a>
+    <a class="pill-link" href="./privacidad.html">Política de Privacidad y Contacto</a>
+    <span class="lang-switch" aria-label="Selector de idioma">
+      <a class="pill-link is-active" href="./registro.html">ES</a>
+      <a class="pill-link" href="./registro-en.html">EN</a>
+    </span>
+  </nav>
+
+  <section class="card">
+    <h2>Solicitud de alta</h2>
+    <p class="muted">Introduce tus datos, el perfil solicitado y resuelve el captcha. El conector solo se desplegará cuando connector-1 apruebe la solicitud.</p>
+    <form id="registerForm" class="grid">
+      <div>
+        <label>Nombre</label>
+        <input id="registerFirstName" type="text" required placeholder="Nombre" />
+      </div>
+      <div>
+        <label>Apellidos</label>
+        <input id="registerLastName" type="text" placeholder="Apellidos" />
+      </div>
+      <div>
+        <label>Correo electrónico</label>
+        <input id="registerEmail" type="email" required placeholder="usuario@empresa.com" />
+      </div>
+      <div>
+        <label>Contraseña</label>
+        <input id="registerPassword" type="password" required minlength="9" placeholder="Tu contraseña" />
+        <small class="muted">Mínimo 9 caracteres, 1 mayúscula, 1 número y 1 carácter especial.</small>
+      </div>
+      <div>
+        <label>Perfil solicitado</label>
+        <select id="registerRoleMode" required>
+          <option value="consumer">Consumidor</option>
+          <option value="provider">Proveedor</option>
+          <option value="both">Proveedor y consumidor</option>
+        </select>
+      </div>
+      <div>
+        <label>Captcha</label>
+        <div id="captchaQuestion" class="muted"></div>
+        <input id="captchaAnswer" type="text" required placeholder="Resultado" />
+      </div>
+      <div>
+        <button id="registerSubmit" type="submit">Enviar solicitud</button>
+      </div>
+    </form>
+    <p id="registerStatus" class="status"></p>
+    <pre id="registerResult" class="muted"></pre>
+    <p class="muted">Cuando se apruebe o deniegue, recibirás un correo en la dirección indicada. Solo tras la aprobación podrás iniciar sesión.</p>
+  </section>
+</div>
+</body>
+</html>

@@ -1,0 +1,38 @@
+My Open Dataspace
+Copyright 2026 The My Open Dataspace contributors
+
+This product includes software developed as part of the following projects.
+Each component remains governed by its own licence.
+
+--------------------------------------------------------------------------
+Catalejo — federated DCAT catalogue for EDC data spaces
+  https://github.com/nekosphera/catalejo
+  Licensed under the Apache License, Version 2.0.
+  Incorporated under federation/ and profiles/, adapted to read the node's
+  list of known nodes instead of a fixed connector configuration.
+  See docs/procedencia.md for the exact commit.
+
+--------------------------------------------------------------------------
+Third-party components obtained as published container images or packages
+and not redistributed in this repository:
+
+  Eclipse Dataspace Components (Eclipse Foundation) — Apache-2.0
+  Keycloak (Red Hat / CNCF) — Apache-2.0
+  Apache Jena Fuseki (The Apache Software Foundation) — Apache-2.0
+  PostgreSQL (PostgreSQL Global Development Group) — PostgreSQL Licence
+  Caddy (Light Code Labs / Ardan Labs) — Apache-2.0
+
+Their licences and notices travel with the images and packages themselves.
+
+--------------------------------------------------------------------------
+Vocabularies and profiles
+
+  DCAT-AP and ODRL are specifications published by their respective bodies.
+  The profile and SHACL shape files under profiles/ are this project's own
+  expression of those specifications and carry the project's licence.
+
+--------------------------------------------------------------------------
+Naming
+
+  This project is not affiliated with, endorsed by, nor derived from
+  "OpenDataSpace" (SSP Europe / DRACOON) or any similarly named product.

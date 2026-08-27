@@ -1,0 +1,41 @@
+{
+  "@context": {
+    "dcat": "http://www.w3.org/ns/dcat#",
+    "dct": "http://purl.org/dc/terms/",
+    "ods": "urn:ods:",
+    "odrl": "http://www.w3.org/ns/odrl/2/",
+    "prov": "http://www.w3.org/ns/prov#"
+  },
+  "@id": "urn:ods:profile:dcat-ap:1.0.0",
+  "@type": "dct:Standard",
+  "dct:title": "DCAT-AP profile",
+  "dct:hasVersion": "1.0.0",
+  "dct:requires": [
+    "dct:identifier",
+    "dct:title",
+    "dct:description",
+    "dct:publisher",
+    "dct:license",
+    "dct:accessRights",
+    "dcat:theme",
+    "dcat:keyword",
+    "dcat:mediaType",
+    "ods:policyId",
+    "ods:contractId",
+    "ods:deliveryMode"
+  ],
+  "ods:controlledValues": {
+    "dct:accessRights": [
+      "public",
+      "restricted",
+      "contractual-dashboard",
+      "controlled-governed-reuse"
+    ],
+    "ods:deliveryMode": [
+      "dashboard",
+      "download",
+      "api",
+      "streaming"
+    ]
+  }
+}

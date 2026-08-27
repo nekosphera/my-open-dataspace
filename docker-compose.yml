@@ -1,0 +1,201 @@
+# My Open Dataspace — seis contenedores y nada mas.
+#
+# Un unico puerto expuesto, el de Caddy. Todo lo demas se habla por la red
+# interna: ni la base de datos, ni Keycloak, ni Fuseki, ni la superficie de
+# gestion del conector asoman a la maquina anfitriona. Abrirlos es lo que
+# convierte un nodo en una consola de administracion publica.
+
+name: my-open-dataspace
+
+x-restart: &restart
+  restart: unless-stopped
+
+services:
+
+  caddy:
+    # La puerta de entrada. Con ODS_DOMAIN pide certificado y renueva solo;
+    # sin el sirve por HTTP en el puerto local y no habla con nadie fuera.
+    image: caddy:2.8-alpine
+    <<: *restart
+    ports:
+      - "${ODS_HTTP_PORT:-8080}:80"
+      - "${ODS_HTTPS_PORT:-8443}:443"
+    entrypoint: ["/usr/local/bin/ods-caddy"]
+    environment:
+      # La direccion la resuelve el arranque, que si sabe ramificar entre los
+      # tres casos de dominio y TLS. Ver deploy/caddy-entrypoint.sh.
+      ODS_DOMAIN: "${ODS_DOMAIN:-}"
+      ODS_TLS: "${ODS_TLS:-auto}"
+      ODS_ADMIN_EMAIL: "${ODS_ADMIN_EMAIL:?ODS_ADMIN_EMAIL es obligatorio}"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./deploy/caddy-entrypoint.sh:/usr/local/bin/ods-caddy:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+    networks: [ods]
+
+  app:
+    # Portal publico, consola del participante, API de alta y el federador
+    # que mantiene el catalogo consolidado en Fuseki.
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    image: ${ODS_IMAGE_APP:-myopendataspace/app:dev}
+    <<: *restart
+    environment:
+      ODS_ORG_NAME: "${ODS_ORG_NAME:-}"
+      ODS_ORG_ID: "${ODS_ORG_ID:-}"
+      ODS_ADMIN_EMAIL: "${ODS_ADMIN_EMAIL:?ODS_ADMIN_EMAIL es obligatorio}"
+      ODS_LANG: "${ODS_LANG:-es}"
+      ODS_PUBLIC_URL: "${ODS_PUBLIC_URL:-http://localhost:8080}"
+      ODS_CONNECTOR_ID: "${ODS_CONNECTOR_ID:-connector}"
+      ODS_CONNECTOR_URL: "http://connector:8080"
+      ODS_DOWNLOAD_ALLOWED_HOSTS: "${ODS_DOWNLOAD_ALLOWED_HOSTS:-localhost}"
+      ODS_SEED_DEMO: "${ODS_SEED_DEMO:-true}"
+      # Catalogo federado
+      ODS_FEDERATION_INTERVAL: "${ODS_FEDERATION_INTERVAL:-300}"
+      ODS_SPARQL_PUBLIC: "${ODS_SPARQL_PUBLIC:-false}"
+      ODS_FUSEKI_URL: "http://fuseki:3030"
+      ODS_FUSEKI_DATASET: "dataspace"
+      ODS_FUSEKI_ADMIN_PASSWORD: "${ODS_FUSEKI_ADMIN_PASSWORD:?ODS_FUSEKI_ADMIN_PASSWORD es obligatorio}"
+      # Identidad. Con /auth: Keycloak arranca con --http-relative-path=/auth,
+      # de modo que su API de administracion vive bajo ese prefijo tambien por
+      # dentro. Sin el, cada llamada devuelve 404 y las reparaciones de
+      # arranque -- que son no fatales a proposito -- fallan en silencio.
+      KEYCLOAK_URL: "http://keycloak:8080/auth"
+      KEYCLOAK_ADMIN_USER: "admin"
+      KEYCLOAK_ADMIN_PASSWORD: "${ODS_KEYCLOAK_ADMIN_PASSWORD:?ODS_KEYCLOAK_ADMIN_PASSWORD es obligatorio}"
+      REALM_NAME: "${ODS_REALM:-dataspace}"
+      # Estado
+      ONBOARDING_DATA_DIR: "/var/lib/ods"
+      ODS_FILES_DIR: "/var/lib/ods/files"
+      ONBOARDING_PORT: "8092"
+      # Correo de avisos: sin servidor configurado no se envia nada y se dice.
+      ODS_SMTP_HOST: "${ODS_SMTP_HOST:-}"
+      ODS_SMTP_PORT: "${ODS_SMTP_PORT:-587}"
+      ODS_SMTP_USER: "${ODS_SMTP_USER:-}"
+      ODS_SMTP_PASSWORD: "${ODS_SMTP_PASSWORD:-}"
+    volumes:
+      - ods-data:/var/lib/ods
+      - files:/var/lib/ods/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+      fuseki:
+        condition: service_started
+    networks: [ods]
+
+  connector:
+    # Un solo conector, proveedor y consumidor a la vez.
+    build:
+      context: ./connector
+      dockerfile: Dockerfile
+    image: ${ODS_IMAGE_CONNECTOR:-myopendataspace/connector:dev}
+    <<: *restart
+    environment:
+      EDC_CONNECTOR_ID: "${ODS_CONNECTOR_ID:-connector}"
+      EDC_CONNECTOR_NAME: "${ODS_ORG_NAME:-My Open Dataspace}"
+      EDC_AUTH_MODE: "keycloak"
+      EDC_API_CONTROL_BASEURL: "http://connector:8080"
+      EDC_IAM_ENDPOINT: "http://keycloak:8080/auth/realms/${ODS_REALM:-dataspace}"
+      # Con que clave se verifica la firma de un token, y que emisor se acepta.
+      # El emisor que Keycloak pone en el token es el que ve el navegador -- la
+      # direccion publica -- aunque este servicio le hable por la red interna.
+      KEYCLOAK_JWKS_URL: "http://keycloak:8080/auth/realms/${ODS_REALM:-dataspace}/protocol/openid-connect/certs"
+      KEYCLOAK_ISSUER_URL: "${ODS_PUBLIC_URL:-http://localhost:8080}/auth/realms/${ODS_REALM:-dataspace}"
+      DATABASE_URL: "jdbc:postgresql://postgres:5432/dataspace"
+      DATABASE_USER: "dataspace"
+      DATABASE_PASSWORD: "${ODS_DB_PASSWORD:?ODS_DB_PASSWORD es obligatorio}"
+      # Los destinos a los que se permite entregar un dato. Es uno de los dos
+      # controles que la especificacion conserva: sin esto, una transferencia
+      # aceptada puede empujar el dato a cualquier direccion de internet.
+      EDC_DOWNLOAD_ALLOWED_HOSTS: "${ODS_DOWNLOAD_ALLOWED_HOSTS:-localhost}"
+    volumes:
+      - files:/var/lib/ods/files
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_started
+    networks: [ods]
+
+  postgres:
+    # Una sola base para la aplicacion y el conector.
+    image: postgres:16-alpine
+    <<: *restart
+    environment:
+      POSTGRES_USER: "dataspace"
+      POSTGRES_PASSWORD: "${ODS_DB_PASSWORD:?ODS_DB_PASSWORD es obligatorio}"
+      POSTGRES_DB: "dataspace"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dataspace -d dataspace"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    networks: [ods]
+
+  keycloak:
+    # Identidad OIDC con el realm importado en el arranque: cero pasos
+    # manuales. `start-dev` porque este Keycloak esta detras de Caddy y no
+    # termina TLS el mismo.
+    image: quay.io/keycloak/keycloak:26.0
+    <<: *restart
+    command:
+      - start-dev
+      - --import-realm
+      - --http-relative-path=/auth
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: "admin"
+      KC_BOOTSTRAP_ADMIN_PASSWORD: "${ODS_KEYCLOAK_ADMIN_PASSWORD:?ODS_KEYCLOAK_ADMIN_PASSWORD es obligatorio}"
+      KC_DB: "postgres"
+      KC_DB_URL: "jdbc:postgresql://postgres:5432/keycloak"
+      KC_DB_USERNAME: "dataspace"
+      KC_DB_PASSWORD: "${ODS_DB_PASSWORD:?ODS_DB_PASSWORD es obligatorio}"
+      # Con /auth al final. KC_HOSTNAME es una URL completa y su ruta manda
+      # sobre --http-relative-path: sin ella, Keycloak emite tokens con
+      # iss=<publica>/realms/... mientras sirve en <publica>/auth/realms/...,
+      # y el conector rechaza todos los tokens por emisor que no coincide.
+      KC_HOSTNAME: "${ODS_PUBLIC_URL:-http://localhost:8080}/auth"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: "xforwarded"
+      # Lo que el realm importado necesita saber del nodo.
+      ODS_REALM: "${ODS_REALM:-dataspace}"
+      ODS_ADMIN_EMAIL: "${ODS_ADMIN_EMAIL:?ODS_ADMIN_EMAIL es obligatorio}"
+    volumes:
+      - ./deploy/keycloak:/opt/keycloak/data/import:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [ods]
+
+  fuseki:
+    # El almacen RDF del catalogo consolidado. Con TDB2, que es lo que
+    # permite compactar sin parar el servicio.
+    image: stain/jena-fuseki:5.1.0
+    <<: *restart
+    environment:
+      ADMIN_PASSWORD: "${ODS_FUSEKI_ADMIN_PASSWORD:?ODS_FUSEKI_ADMIN_PASSWORD es obligatorio}"
+      FUSEKI_DATASET_1: "dataspace"
+      TDB: "2"
+    volumes:
+      - fuseki-data:/fuseki
+    networks: [ods]
+
+volumes:
+  pgdata:
+  files:
+  ods-data:
+  caddy-data:
+  caddy-config:
+  fuseki-data:
+
+networks:
+  ods:
+    driver: bridge
