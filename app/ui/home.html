@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Espacio de datos</title>
+  <meta name="description" content="Publica productos de datos con sus políticas, negocia contratos y consulta la oferta de todos los nodos del espacio de datos." />
+  <link rel="canonical" href="" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="" />
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./runtime-config.js"></script>
+  <script src="./site-config.js"></script>
+  <script>
+    window.DATASPACE_SITE.applyPage({
+      path: "./home.html",
+      title: "Espacio de datos",
+      description: "Publica productos de datos con sus políticas, negocia contratos y consulta la oferta de todos los nodos del espacio de datos."
+    });
+  </script>
+</head>
+<body>
+<div class="container">
+
+  <header class="site-header">
+    <img data-site-logo-img alt="" />
+    <div>
+      <p class="eyebrow">ESPACIO DE DATOS</p>
+      <h1 data-site-brand></h1>
+    </div>
+  </header>
+
+  <nav class="top-nav">
+    <a class="pill-link is-active" href="./home.html">Inicio</a>
+    <a class="pill-link" href="./login.html">Acceder</a>
+    <a class="pill-link" href="./registro.html">Registro</a>
+    <a class="pill-link" href="./privacidad.html">Privacidad</a>
+    <span class="lang-switch" aria-label="Selector de idioma">
+      <a class="pill-link is-active" href="./home.html">ES</a>
+      <a class="pill-link" href="./home-en.html">EN</a>
+    </span>
+  </nav>
+
+  <section class="hero">
+    <h2 data-site-brand></h2>
+    <p>Un nodo de un espacio de datos: aquí se publican productos de datos con su política y su contrato, se negocia el acceso y se consulta la oferta de todos los nodos dados de alta, en una sola pantalla.</p>
+    <p class="hero-actions">
+      <a class="btn" href="./login.html">Acceder a la consola</a>
+      <a class="btn secondary" href="./registro.html">Solicitar acceso</a>
+    </p>
+  </section>
+
+  <section class="card">
+    <h2>Catálogo del espacio de datos</h2>
+    <p class="muted">La oferta de este nodo y la de los nodos dados de alta, cada una con quien la ofrece. Desde aquí sólo se mira: negociar el contrato y descargar el dato se hace desde la consola, con sesión iniciada.</p>
+    <button id="reloadFederatedCatalogBtn" class="secondary" type="button">Recargar</button>
+    <div id="federatedCatalogSummary" class="status muted"></div>
+    <table id="federatedCatalogTable"></table>
+  </section>
+
+  <section class="card">
+    <h2>Qué es esto</h2>
+    <p>Un espacio de datos no es un catálogo abierto: es un sitio donde el acceso a cada dato está gobernado por una política y cerrado por un contrato. Publicar no es exponer, y descargar exige haber negociado.</p>
+    <p>Cada nodo es de quien lo instala. Este nodo publica su propia oferta y, cuando da de alta la dirección de otro, la de aquél pasa a formar parte de este catálogo. Así es como varias organizaciones que instalaron esto por separado forman un espacio de datos de verdad.</p>
+    <p class="muted">Dos controles sostienen lo anterior y se pueden comprobar: hace falta una negociación cerrada para descargar, y los destinos de entrega están limitados. Cada operación y cada denegación quedan registradas.</p>
+  </section>
+
+  <section class="card">
+    <h2>Alcance</h2>
+    <p class="muted">Este nodo funciona con My Open Dataspace, que demuestra escenarios concretos de publicación, descubrimiento, negociación, transferencia y evidencia. No certifica conformidad, no garantiza interoperabilidad universal y no acredita pertenencia a ninguna iniciativa.</p>
+  </section>
+
+  <footer class="site-footer">
+    <p class="muted"><span data-site-brand></span> · <a href="./privacidad.html">Privacidad</a> · <a data-site-contact-email href="#"></a></p>
+    <p class="muted" data-site-legal-notice></p>
+  </footer>
+
+</div>
+<script src="./home-catalog.js"></script>
+</body>
+</html>

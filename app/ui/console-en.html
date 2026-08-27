@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>connector Console</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./runtime-config.js?v=20260419-9"></script>
+  <script src="./site-config.js?v=20260419-9"></script>
+  <script>
+    window.DATASPACE_SITE.applyPage({
+      path: "./console-en.html",
+      title: "connector Console",
+      robots: "noindex, follow"
+    });
+  </script>
+</head>
+<body>
+<div class="container">
+  <nav class="top-nav">
+    <a class="pill-link" href="./home-en.html">Home</a>
+    <a class="pill-link" href="./login-en.html">Login</a>
+    <span class="lang-switch" aria-label="Language selector">
+      <a class="pill-link" href="./console.html">ES</a>
+      <a class="pill-link is-active" href="./console-en.html">EN</a>
+    </span>
+  </nav>
+
+  <!-- La pagina se genera una vez y la comparte el nodo. Quien la mira lo dice
+       su token, asi que estos dos se reescriben al entrar: si no, a un
+       participante le diria que su conector es el del nodo y que el dueno es
+       otra persona. -->
+  <h1 id="consoleHeading">Connector connector</h1>
+  <p class="muted">Endpoint (proxy): <strong>/api/connector</strong></p>
+  <p class="muted">Owner: <strong id="consoleOwner">admin@ejemplo.invalid</strong></p>
+  <p class="muted">Assigned profile: <strong>Provider and consumer</strong></p>
+
+  <div id="operationTabNav" class="tab-nav" role="tablist" aria-label="Connector operation areas">
+    <button id="operationProviderBtn" class="tab-btn is-active" type="button" role="tab" aria-controls="operationProviderPanel" aria-selected="true">Data provider</button>
+    <button id="operationConsumerBtn" class="tab-btn" type="button" role="tab" aria-controls="operationConsumerPanel" aria-selected="false">Consumption and catalog</button>
+    <button id="operationNodesBtn" class="tab-btn" type="button" role="tab" aria-controls="operationNodesPanel" aria-selected="false">Known nodes</button>
+    <button id="operationRequestsBtn" class="tab-btn" type="button" role="tab" aria-controls="operationRequestsPanel" aria-selected="false" hidden>Users and requests</button>
+  </div>
+
+  <!-- La pestana de altas. Nace oculta y la ensena console-solicitudes.js a
+       quien administra el nodo: para el resto no hay nada que hacer aqui, y
+       una pestana que siempre contesta «no puedes» es peor que no estar. -->
+  <div id="operationRequestsPanel" class="tab-panel" role="tabpanel" aria-labelledby="operationRequestsBtn" hidden>
+    <div class="card">
+      <h2>Pending requests</h2>
+      <p class="muted">Someone asked to join this node. Approving creates their account and their access; denying leaves no account behind.</p>
+      <p><button id="reloadConnectorRequestsBtn" class="secondary" type="button">Reload</button></p>
+      <div id="connectorRequestsStatus" class="status muted"></div>
+      <table id="connectorRequestsTable"></table>
+    </div>
+    <div class="card">
+      <h2>Participants</h2>
+      <p class="muted">Who is already registered in this node.</p>
+      <p><button id="reloadConnectorDirectoryBtn" class="secondary" type="button">Reload</button></p>
+      <div id="connectorDirectoryStatus" class="status muted"></div>
+      <table id="connectorDirectoryTable"></table>
+    </div>
+  </div>
+
+  <div id="operationNodesPanel" class="tab-panel" role="tabpanel" aria-labelledby="operationNodesBtn" hidden>
+    <div class="card">
+      <h2>Known nodes</h2>
+      <p class="muted">Add the address of another node and its offer joins this catalogue, next to your own. This is what makes several organisations that installed this separately into one data space.</p>
+
+      <div class="form-row">
+        <div><label for="nodeLabel">Name</label><input id="nodeLabel" placeholder="Neighbouring consortium" /></div>
+        <div><label for="nodeBaseUrl">Address</label><input id="nodeBaseUrl" placeholder="https://nodo.ejemplo.org" /></div>
+      </div>
+      <button id="addNodeBtn" class="btn" type="button">Add node</button>
+      <button id="syncNodesBtn" class="secondary" type="button">Refresh now</button>
+      <div id="nodesStatus" class="status muted"></div>
+      <table id="nodesTable"></table>
+      <p class="muted">A node that stops answering is marked unavailable and keeps its last known offer, with the date of its last successful sync. A node being down never empties the view of the others.</p>
+    </div>
+  </div>
+
+  <div id="operationProviderPanel" class="tab-panel is-active" role="tabpanel" aria-labelledby="operationProviderBtn">
+
+  <div class="card">
+    <h2>Create data asset</h2>
+    <p class="muted">The URL where the data actually lives. It is what the connector delivers once a contract is closed, so it has to be reachable from this node.</p>
+    <form id="assetForm" class="grid">
+      <div style="grid-column: 1 / -1;"><label>Resource base URL</label><input id="assetBaseUrl" required placeholder="https://your-domain/objects/assets/document.pdf"/></div>
+      <div><label>Name</label><input id="assetName" required placeholder="Air quality 2026" value=""/></div>
+      <div><label>Description</label><input id="assetDescription" required placeholder="Hourly particulate readings from three stations" value=""/></div>
+      <div><label>DCAT-AP identifier</label><input id="assetIdentifier" data-site-identifier-prefix value="urn:ods:dataset:"/></div>
+      <div><label>DCAT-AP keywords (comma)</label><input id="assetKeywords" required placeholder="air, environment, stations" value=""/></div>
+      <div><label>DCAT-AP theme</label><input id="assetTheme" required placeholder="http://publications.europa.eu/resource/authority/data-theme/ENVI" value=""/></div>
+      <div><label>Language</label><input id="assetLanguage" value="es"/></div>
+      <div><label>License</label><input id="assetLicense" value="https://creativecommons.org/licenses/by-nc/4.0/"/></div>
+      <div><label>Publisher</label><input id="assetPublisher" data-site-publisher value="My Open Dataspace"/></div>
+      <div><label>Spatial coverage</label><input id="assetSpatial" value="ES"/></div>
+      <div><label>Period start (ISO8601)</label><input id="assetTemporalStart" value="2026-01-01"/></div>
+      <div><label>Period end (ISO8601)</label><input id="assetTemporalEnd" value="2026-12-31"/></div>
+      <div><label>Distribution format</label><input id="assetFormat" value="application/pdf"/></div>
+      <div><label>Media type</label><input id="assetMediaType" value="application/pdf"/></div>
+      <div><label>Access rights</label><input id="assetAccessRights" value="public"/></div>
+      <!-- El perfil de metadatos exige `ods:deliveryMode` y solo admite estos
+           cuatro valores, asi que se eligen en vez de escribirse. Antes no
+           habia campo ninguno y la consola lo enviaba con el prefijo del
+           proyecto de origen: no se podia publicar. -->
+      <div><label>Delivery mode</label><select id="assetDeliveryMode">
+        <option value="download" selected>download - the file is downloaded</option>
+        <option value="api">api - served through an interface</option>
+        <option value="streaming">streaming - continuous flow</option>
+        <option value="dashboard">dashboard - viewed, not downloaded</option>
+      </select></div>
+      <div><button type="submit">Create asset</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Create policy</h2>
+    <form id="policyForm" class="grid">
+      <div style="grid-column: 1 / -1;"><label>Data asset reused URL</label><input id="policySourceUrl" required readonly placeholder="Filled in from the data asset you just created"/></div>
+      <div><label>Name</label><input id="policyName" required value="Policy C1"/></div>
+      <div><label>License URL</label><input id="policyLicenseUrl" placeholder="https://creativecommons.org/licenses/by/4.0/" value=""/></div>
+      <div><label>Purpose</label><input id="policyPurpose" placeholder="Air quality analysis" value=""/></div>
+      <div><label>Geographic scope</label><input id="policyGeographicScope" value="EU"/></div>
+      <div><label>Retention (days, 0 = n/a)</label><input id="policyRetentionDays" type="number" min="0" value="0"/></div>
+      <div><label>Internal use</label><input id="policyInternalUse" value="allowed-with-traceability"/></div>
+      <div><label>AI usage</label><input id="policyAiUsage" value="review-required"/></div>
+      <div><label>Redistribution / forwarding</label><input id="policyRedistributionMode" value="contract-only"/></div>
+      <div><label>Onward transfer</label><input id="policyOnwardTransfer" value="contract-only"/></div>
+      <div><label>Commercial use</label><input id="policyCommercialUse" value="review-required"/></div>
+      <div><label>Anonymization required</label><input id="policyAnonymization" value="not-required"/></div>
+      <div><label>Attribution mode</label><input id="policyAttributionMode" value="source-link-and-publisher"/></div>
+      <div><label>Notice of changes</label><input id="policyNoticeOfChanges" value="required-for-derived-material"/></div>
+      <div><label>Rate limit compliance</label><input id="policyRateLimitCompliance" value="not-applicable"/></div>
+      <div><label>Refresh expectation</label><input id="policyDataRefreshExpectation" value="snapshot-or-versioned-release"/></div>
+      <div style="grid-column: 1 / -1;"><label>Permitted actions (comma)</label><input id="policyPermittedActions" value="use, read, reproduce"/></div>
+      <div style="grid-column: 1 / -1;"><label>Prohibited actions (comma)</label><input id="policyProhibitedActions" value="sell"/></div>
+      <div style="grid-column: 1 / -1;"><label>Duties / mandatory clauses (comma)</label><input id="policyDuties" value="attribution, keep-source-link"/></div>
+      <div style="grid-column: 1 / -1;"><label>Security measures</label><input id="policySecurityMeasures" value="signed-traceability, access-logging"/></div>
+      <div style="grid-column: 1 / -1;"><label>Regulatory summary / clauses</label><textarea id="policyClausesSummary" rows="4"></textarea></div>
+      <div><button type="submit">Create policy</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>Create contract</h2>
+    <form id="contractForm" class="grid">
+      <div><label>Data asset</label><select id="contractAssetIdSelect" required></select></div>
+      <div><label>Policy</label><select id="contractPolicyIdSelect" required></select></div>
+      <div><button type="submit">Create contract</button></div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h2>View my assets</h2>
+    <button id="reloadBtn">Reload</button>
+    <h3>Assets</h3><table id="assetsTable"></table>
+    <h3>Policies</h3><table id="policiesTable"></table>
+    <h3>Contracts</h3><table id="contractsTable"></table>
+    <h3>Negotiations</h3><table id="negotiationsTable"></table>
+  </div>
+
+  </div>
+
+  <div id="operationConsumerPanel" class="tab-panel" role="tabpanel" aria-labelledby="operationConsumerBtn" hidden>
+
+  <div class="card">
+    <h2>Federated catalog</h2>
+    <p class="muted">From this connector you can accept policies and download resources after a completed negotiation.</p>
+    <button id="reloadFederatedBtn">Reload federated</button>
+    <table id="federatedTable"></table>
+  </div>
+
+  </div>
+
+  <div id="status" class="status"></div>
+</div>
+
+<script>
+  window.CONNECTOR_CONFIG = {
+    id: "connector",
+    lang: "en",
+    label: "Connector connector",
+    baseUrl: "/api/connector",
+    features: {
+      create: true,
+      myAssets: true,
+      federated: true,
+      allowNegotiate: true,
+      allowDownload: true
+    },
+    auth: {
+      enabled: true,
+      url: window.DATASPACE_SITE.config.authBaseUrl,
+      realm: "dataspace",
+      clientId: "dataspace-ui",
+      refreshSeconds: 30
+    },
+    consolidatedCatalogUrl: "/api/v1/nodes/catalog",
+    negotiationTargets: [{"id": "connector", "label": "Mi Organizacion", "baseUrl": "/api/connector", "local": true, "status": "pending"}]
+  };
+</script>
+<script src="./app.js?v=20260731-2"></script>
+<script src="./console-solicitudes.js?v=1"></script>
+</body>
+</html>

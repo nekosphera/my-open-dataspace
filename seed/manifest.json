@@ -1,0 +1,54 @@
+{
+  "version": "1.0.0",
+  "description": "Los productos de datos que un nodo recién instalado publica solo. Están para que la primera pantalla no esté vacía y para poder recorrer publicar, negociar y descargar sin haber subido nada todavía. Sustitúyelos por los tuyos.",
+  "datasets": [
+    {
+      "dct:identifier": "urn:ods:dataset:ejemplo-ocupacion",
+      "dct:title": "Ocupación de aparcamiento (ejemplo)",
+      "dct:description": "Ocupación de las plazas de aparcamiento en superficie, con una medida por hora. Es un producto de datos de ejemplo: los valores son inventados y están aquí para probar el recorrido completo.",
+      "dct:publisher": "Organización de ejemplo",
+      "dct:license": "https://creativecommons.org/licenses/by/4.0/",
+      "dct:accessRights": "restricted",
+      "dcat:theme": "http://publications.europa.eu/resource/authority/data-theme/TRAN",
+      "dcat:keyword": "ejemplo,movilidad,aparcamiento",
+      "dcat:mediaType": "text/csv",
+      "ods:deliveryMode": "download",
+      "ods:policyId": "policy-ejemplo-ocupacion",
+      "ods:contractId": "contract-ejemplo-ocupacion",
+      "file": "data/ocupacion-aparcamiento.csv"
+    },
+    {
+      "dct:identifier": "urn:ods:dataset:ejemplo-calidad-aire",
+      "dct:title": "Calidad del aire (ejemplo)",
+      "dct:description": "Medidas horarias de partículas en suspensión en tres estaciones. Es un producto de datos de ejemplo, pensado para que haya más de una oferta en el catálogo y se vea el filtrado.",
+      "dct:publisher": "Organización de ejemplo",
+      "dct:license": "https://creativecommons.org/licenses/by/4.0/",
+      "dct:accessRights": "public",
+      "dcat:theme": "http://publications.europa.eu/resource/authority/data-theme/ENVI",
+      "dcat:keyword": "ejemplo,aire,medioambiente",
+      "dcat:mediaType": "text/csv",
+      "ods:deliveryMode": "download",
+      "ods:policyId": "policy-ejemplo-calidad-aire",
+      "ods:contractId": "contract-ejemplo-calidad-aire",
+      "file": "data/calidad-aire.csv"
+    }
+  ],
+  "policies": [
+    {
+      "id": "policy-ejemplo-ocupacion",
+      "ods:policyProfile": "ods-odrl-1.0.0",
+      "ods:purpose": "movilidad-urbana",
+      "permission": [{"action": "use"}],
+      "prohibition": [],
+      "obligation": []
+    },
+    {
+      "id": "policy-ejemplo-calidad-aire",
+      "ods:policyProfile": "ods-odrl-1.0.0",
+      "ods:purpose": "investigacion",
+      "permission": [{"action": "use"}],
+      "prohibition": [],
+      "obligation": []
+    }
+  ]
+}

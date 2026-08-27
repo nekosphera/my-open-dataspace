@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Configurar este nodo</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+<div class="container">
+
+  <h1 data-t="title">Configurar este nodo</h1>
+  <p class="muted" data-t="intro">
+    Cuatro pasos y menos de dos minutos. Al terminar tendrás tu espacio de
+    datos funcionando, con un producto de ejemplo ya publicado.
+  </p>
+
+  <div class="tab-nav" role="tablist" aria-label="Pasos">
+    <button class="tab-btn is-active" type="button" role="tab" data-step="1" aria-selected="true">1 · <span data-t="s1">Organización</span></button>
+    <button class="tab-btn" type="button" role="tab" data-step="2" aria-selected="false">2 · <span data-t="s2">Administrador</span></button>
+    <button class="tab-btn" type="button" role="tab" data-step="3" aria-selected="false">3 · <span data-t="s3">Idioma y marca</span></button>
+    <button class="tab-btn" type="button" role="tab" data-step="4" aria-selected="false">4 · <span data-t="s4">Confirmación</span></button>
+  </div>
+
+  <section class="card tab-panel is-active" data-panel="1">
+    <h2 data-t="s1">Organización</h2>
+    <p class="muted" data-t="p1">El nombre que se verá en el portal y en tu oferta cuando otro nodo la mire.</p>
+    <div><label for="orgName" data-t="l_orgName">Nombre</label><input id="orgName" autocomplete="organization" /></div>
+    <div>
+      <label for="orgId" data-t="l_orgId">Identificador</label>
+      <input id="orgId" />
+      <p class="muted" data-t="h_orgId">Sólo minúsculas, números y guiones. Si lo dejas vacío se deriva del nombre.</p>
+    </div>
+    <button class="btn" type="button" data-next="2" data-t="next">Siguiente</button>
+  </section>
+
+  <section class="card tab-panel" data-panel="2" hidden>
+    <h2 data-t="s2">Administrador</h2>
+    <p class="muted" data-t="p2">
+      Esta dirección se usa en cuatro sitios: tu usuario administrador, el
+      certificado TLS, el contacto de tu participante en el catálogo y los
+      avisos.
+    </p>
+    <div><label for="adminEmail" data-t="l_email">Correo</label><input id="adminEmail" type="email" autocomplete="email" /></div>
+    <div>
+      <label for="adminPassword" data-t="l_password">Contraseña</label>
+      <input id="adminPassword" type="password" autocomplete="new-password" />
+      <p class="muted" data-t="h_password">Nueve caracteres o más, con una mayúscula, un número y un símbolo.</p>
+    </div>
+    <button class="secondary" type="button" data-next="1" data-t="back">Atrás</button>
+    <button class="btn" type="button" data-next="3" data-t="next">Siguiente</button>
+  </section>
+
+  <section class="card tab-panel" data-panel="3" hidden>
+    <h2 data-t="s3">Idioma y marca</h2>
+    <div>
+      <label for="lang" data-t="l_lang">Idioma de la interfaz</label>
+      <select id="lang"><option value="es">Español</option><option value="en">English</option></select>
+    </div>
+    <div><label for="brandColor" data-t="l_color">Color principal</label><input id="brandColor" type="color" value="#1f5fd0" /></div>
+    <div>
+      <label for="logoPath" data-t="l_logo">Logotipo</label>
+      <input id="logoPath" placeholder="/assets/brand/logo.svg" />
+      <p class="muted" data-t="h_logo">Opcional. Ruta a un fichero que hayas dejado en el volumen de marca.</p>
+    </div>
+    <div><label for="legalNotice" data-t="l_legal">Aviso legal</label><input id="legalNotice" /></div>
+    <button class="secondary" type="button" data-next="2" data-t="back">Atrás</button>
+    <button class="btn" type="button" data-next="4" data-t="next">Siguiente</button>
+  </section>
+
+  <section class="card tab-panel" data-panel="4" hidden>
+    <h2 data-t="s4">Confirmación</h2>
+    <table id="summary"></table>
+    <div id="setupStatus" class="status muted"></div>
+    <button class="secondary" type="button" data-next="3" data-t="back">Atrás</button>
+    <button id="finishBtn" class="btn" type="button" data-t="finish">Finalizar</button>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  // El asistente no depende de app.js ni de site-config.js: corre en un nodo
+  // que todavía no tiene configuración de marca que aplicar, y cargar el
+  // aparato entero para cuatro campos sólo añade sitios donde fallar.
+  const T = {
+    en: {
+      title: "Set up this node",
+      intro: "Four steps and under two minutes. When you finish you will have your data space running, with an example product already published.",
+      s1: "Organisation", s2: "Administrator", s3: "Language and brand", s4: "Confirmation",
+      p1: "The name shown on the portal, and on your offer when another node looks at it.",
+      p2: "This address is used in four places: your administrator account, the TLS certificate, your participant's contact in the catalogue, and notices.",
+      l_orgName: "Name", l_orgId: "Identifier",
+      h_orgId: "Lower case, digits and hyphens only. Leave it empty to derive it from the name.",
+      l_email: "E-mail", l_password: "Password",
+      h_password: "Nine characters or more, with an upper-case letter, a digit and a symbol.",
+      l_lang: "Interface language", l_color: "Primary colour", l_logo: "Logo",
+      h_logo: "Optional. Path to a file you left in the brand volume.",
+      l_legal: "Legal notice",
+      next: "Next", back: "Back", finish: "Finish",
+      working: "Setting up…",
+      done: "Done. Taking you to the console…",
+      missing_org_name: "The organisation name is required.",
+      invalid_email: "That is not a valid e-mail address.",
+      weak_password: "The password does not meet the requirements.",
+      invalid_org_id: "The identifier may only have lower case letters, digits and hyphens.",
+      already_configured: "This node is already configured.",
+      identity_not_ready: "The identity service is still starting. Wait a few seconds and press Finish again.",
+      failed: "Could not finish the setup: "
+    },
+    es: {
+      working: "Configurando…",
+      done: "Listo. Te llevo a la consola…",
+      missing_org_name: "Hace falta el nombre de la organización.",
+      invalid_email: "Eso no es una dirección de correo válida.",
+      weak_password: "La contraseña no cumple los requisitos.",
+      invalid_org_id: "El identificador sólo admite minúsculas, números y guiones.",
+      already_configured: "Este nodo ya está configurado.",
+      identity_not_ready: "El servicio de identidad todavía está arrancando. Espera unos segundos y vuelve a pulsar Finalizar.",
+      failed: "No se pudo terminar la configuración: "
+    }
+  };
+
+  let lang = "es";
+  const t = (clave) => (T[lang] && T[clave in (T[lang] || {}) ? lang : "es"][clave]) || T.es[clave] || clave;
+
+  const $ = (sel) => document.querySelector(sel);
+  const byId = (id) => document.getElementById(id);
+
+  function aplicarIdioma() {
+    document.documentElement.lang = lang;
+    if (lang !== "en") return;
+    document.querySelectorAll("[data-t]").forEach((nodo) => {
+      const texto = T.en[nodo.getAttribute("data-t")];
+      if (texto) nodo.textContent = texto;
+    });
+  }
+
+  function irA(paso) {
+    document.querySelectorAll("[data-panel]").forEach((panel) => {
+      const esta = panel.getAttribute("data-panel") === String(paso);
+      panel.hidden = !esta;
+      panel.classList.toggle("is-active", esta);
+    });
+    document.querySelectorAll("[data-step]").forEach((boton) => {
+      const esta = boton.getAttribute("data-step") === String(paso);
+      boton.classList.toggle("is-active", esta);
+      boton.setAttribute("aria-selected", esta ? "true" : "false");
+    });
+    if (String(paso) === "4") pintarResumen();
+  }
+
+  function valores() {
+    return {
+      orgName: byId("orgName").value.trim(),
+      orgId: byId("orgId").value.trim(),
+      adminEmail: byId("adminEmail").value.trim(),
+      adminPassword: byId("adminPassword").value,
+      lang: byId("lang").value,
+      brandColor: byId("brandColor").value,
+      logoPath: byId("logoPath").value.trim(),
+      legalNotice: byId("legalNotice").value.trim()
+    };
+  }
+
+  function escapar(v) {
+    return String(v == null ? "" : v).replace(/[&<>"']/g, (c) => (
+      { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]
+    ));
+  }
+
+  function pintarResumen() {
+    const v = valores();
+    const filas = [
+      [t("l_orgName"), v.orgName],
+      [t("l_orgId"), v.orgId || "(" + (lang === "en" ? "from the name" : "del nombre") + ")"],
+      [t("l_email"), v.adminEmail],
+      // La contraseña no se enseña, ni siquiera al confirmar.
+      [t("l_password"), v.adminPassword ? "••••••••" : ""],
+      [t("l_lang"), v.lang === "en" ? "English" : "Español"],
+      [t("l_color"), v.brandColor],
+      [t("l_logo"), v.logoPath],
+      [t("l_legal"), v.legalNotice]
+    ].filter(([, valor]) => valor);
+    byId("summary").innerHTML = "<tbody>" + filas.map(
+      ([k, valor]) => `<tr><th>${escapar(k)}</th><td>${escapar(valor)}</td></tr>`
+    ).join("") + "</tbody>";
+  }
+
+  function decir(texto, esError) {
+    const nodo = byId("setupStatus");
+    nodo.textContent = texto;
+    nodo.classList.toggle("error", Boolean(esError));
+  }
+
+  async function finalizar() {
+    const boton = byId("finishBtn");
+    boton.disabled = true;
+    decir(t("working"));
+    try {
+      const respuesta = await fetch("/api/v1/setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(valores())
+      });
+      const cuerpo = await respuesta.json();
+      if (!respuesta.ok) {
+        decir(t(cuerpo.error) !== cuerpo.error ? t(cuerpo.error) : t("failed") + cuerpo.error, true);
+        boton.disabled = false;
+        return;
+      }
+      decir(t("done"));
+      window.location.href = cuerpo.redirect || "/console.html";
+    } catch (err) {
+      decir(t("failed") + String(err.message || err), true);
+      boton.disabled = false;
+    }
+  }
+
+  async function arrancar() {
+    let estado = {};
+    try {
+      estado = await (await fetch("/api/v1/setup", { headers: { Accept: "application/json" } })).json();
+    } catch (_err) {
+      // Un nodo que no contesta aquí tampoco va a poder configurarse; se
+      // sigue pintando el formulario para que al menos se vea el error real
+      // al pulsar Finalizar.
+    }
+    lang = estado.lang === "en" ? "en" : "es";
+    byId("orgName").value = estado.orgName || "";
+    byId("orgId").value = estado.orgId || "";
+    byId("adminEmail").value = estado.adminEmail || "";
+    byId("lang").value = lang;
+    if (estado.brandColor) byId("brandColor").value = estado.brandColor;
+    byId("logoPath").value = estado.logoPath || "";
+    byId("legalNotice").value = estado.legalNotice || "";
+    aplicarIdioma();
+
+    byId("lang").addEventListener("change", () => {
+      lang = byId("lang").value === "en" ? "en" : "es";
+      aplicarIdioma();
+    });
+    document.querySelectorAll("[data-next]").forEach((boton) => {
+      boton.addEventListener("click", () => irA(boton.getAttribute("data-next")));
+    });
+    document.querySelectorAll("[data-step]").forEach((boton) => {
+      boton.addEventListener("click", () => irA(boton.getAttribute("data-step")));
+    });
+    byId("finishBtn").addEventListener("click", finalizar);
+
+    // Si la identidad todavía no está, decirlo antes de que pulse Finalizar
+    // en vez de después.
+    if (estado.identityReady === false) {
+      decir(t("identity_not_ready"));
+    }
+  }
+
+  arrancar();
+})();
+</script>
+</body>
+</html>

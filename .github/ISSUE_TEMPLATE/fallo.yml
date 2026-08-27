@@ -1,0 +1,87 @@
+name: Algo no funciona
+description: Un fallo en el producto, no una duda sobre cómo usarlo.
+labels: ["fallo"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por tomarte el rato.
+
+        **Si es un problema de seguridad, no lo escribas aquí.** Usa el botón
+        «Report a vulnerability» de la pestaña Security: lo que se abre aquí es
+        público desde el primer momento.
+
+  - type: textarea
+    id: que-pasa
+    attributes:
+      label: Qué pasa
+      description: Qué esperabas y qué ocurrió en su lugar.
+      placeholder: |
+        Esperaba que el asistente terminara y me llevara a la consola.
+        En su lugar se quedó en «Configurando…» y no pasó nada más.
+    validations:
+      required: true
+
+  - type: textarea
+    id: como-repetirlo
+    attributes:
+      label: Cómo repetirlo
+      description: Los pasos exactos, desde un nodo recién instalado si se puede.
+      placeholder: |
+        1. ./install.sh con los valores por omisión
+        2. Abrir /setup y rellenar los cuatro pasos
+        3. Pulsar Finalizar
+    validations:
+      required: true
+
+  - type: dropdown
+    id: como-lo-instalaste
+    attributes:
+      label: Cómo lo tienes instalado
+      options:
+        - La composición de seis contenedores (./install.sh)
+        - La imagen todo-en-uno (docker run)
+        - Otra cosa, lo explico abajo
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Versión
+      description: La etiqueta de la imagen, o el commit si construiste en local.
+      placeholder: "0.1.0"
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostico
+    attributes:
+      label: Diagnóstico
+      description: |
+        ```bash
+        ./deploy/diagnostico.sh > diagnostico.txt
+        ```
+
+        Recoge lo que hace falta —versión, estado de los seis contenedores y
+        sus reinicios, qué contesta cada superficie, y los registros— y tapa
+        las direcciones de correo y lo que parezca una credencial. **No** lee
+        el `.env`: de la configuración sólo dice qué variables están puestas,
+        nunca sus valores.
+
+        Aun así, **míralo antes de pegarlo**: puede llevar los nombres de tus
+        máquinas y de tu organización, y eso lo decides tú.
+
+        Si el guion no llega a ejecutarse, pega lo que puedas de
+        `docker compose ps` y `docker compose logs --tail 100`.
+      render: shell
+
+  - type: checkboxes
+    id: comprobaciones
+    attributes:
+      label: Antes de enviar
+      options:
+        - label: He quitado de los registros lo que no quiero que sea público.
+          required: true
+        - label: No estoy pegando ninguna contraseña ni ningún token.
+          required: true

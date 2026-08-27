@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Open Dataspace | Acceso restringido</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./runtime-config.js"></script>
+  <script src="./site-config.js"></script>
+  <script>
+    window.DATASPACE_SITE.applyPage({
+      path: "/index.html",
+      title: "Acceso restringido",
+      robots: "noindex, follow"
+    });
+  </script>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <h1>Acceso restringido</h1>
+    <p>La consola ha sido deshabilitada por seguridad.</p>
+  </div>
+
+  <nav class="top-nav">
+    <a class="pill-link" href="./home.html">Inicio</a>
+    <a class="pill-link" href="./login.html">Login</a>
+    <span class="lang-switch" aria-label="Selector de idioma">
+      <a class="pill-link is-active" href="./index.html">ES</a>
+      <a class="pill-link" href="./index-en.html">EN</a>
+    </span>
+  </nav>
+
+  <section class="card">
+    <h2>Consola no disponible</h2>
+    <p>Si necesitas operar conectores, utiliza el acceso por usuario desde la página de login.</p>
+    <a class="btn" href="./login.html">Ir a login</a>
+  </section>
+</div>
+</body>
+</html>

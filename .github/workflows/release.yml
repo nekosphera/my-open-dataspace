@@ -1,0 +1,240 @@
+name: Publicar versión
+
+# En cada etiqueta de versión: se ejecutan las pruebas, se construyen y suben
+# las imágenes, y se crea la publicación con sus notas.
+#
+# **Si el recorrido completo falla, no hay versión.** No es una frase: el
+# trabajo de construcción depende del de pruebas, así que un rojo ahí impide
+# que se suba una sola imagen. No hay `continue-on-error` en este fichero, y
+# eso es deliberado.
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión a publicar, con la v delante (p. ej. v0.1.0)"
+        required: true
+
+permissions:
+  contents: write      # crear la publicación
+  packages: write      # subir a GitHub Container Registry
+  id-token: write      # firmar sin claves, con la identidad del flujo
+  attestations: write  # el inventario de componentes
+
+env:
+  REGISTRO_GHCR: ghcr.io
+  ESPACIO_DOCKERHUB: myopendataspace
+
+jobs:
+  # La puerta. Todo lo demás depende de esto.
+  pruebas:
+    uses: ./.github/workflows/tests.yml
+
+  imagenes:
+    name: Construir y subir
+    needs: pruebas
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - nombre: my-open-dataspace
+            dockerfile: Dockerfile
+            contexto: .
+          - nombre: app
+            dockerfile: app/Dockerfile
+            contexto: .
+          - nombre: connector
+            dockerfile: connector/Dockerfile
+            contexto: ./connector
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: La versión
+        id: version
+        run: |
+          version="${{ github.event.inputs.version || github.ref_name }}"
+          version="${version#v}"
+          mayor="${version%%.*}"
+          resto="${version#*.}"
+          menor="${resto%%.*}"
+          echo "completa=${version}"      >> "${GITHUB_OUTPUT}"
+          echo "menor=${mayor}.${menor}"  >> "${GITHUB_OUTPUT}"
+          echo "mayor=${mayor}"           >> "${GITHUB_OUTPUT}"
+
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Entrar en GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRO_GHCR }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Docker Hub es opcional a propósito: quien bifurque este repositorio
+      # no tiene esas credenciales, y su flujo no puede fallar por eso.
+      - name: Entrar en Docker Hub
+        id: dockerhub
+        if: env.DOCKERHUB_USUARIO != ''
+        env:
+          DOCKERHUB_USUARIO: ${{ secrets.DOCKERHUB_USUARIO }}
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USUARIO }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Etiquetas
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            ${{ env.REGISTRO_GHCR }}/${{ github.repository_owner }}/${{ matrix.nombre }}
+            ${{ steps.dockerhub.outcome == 'success' && format('{0}/{1}', env.ESPACIO_DOCKERHUB, matrix.nombre) || '' }}
+          tags: |
+            type=raw,value=${{ steps.version.outputs.completa }}
+            type=raw,value=${{ steps.version.outputs.menor }}
+            type=raw,value=${{ steps.version.outputs.mayor }}
+            type=raw,value=latest
+          labels: |
+            org.opencontainers.image.licenses=Apache-2.0
+
+      - name: Construir y subir
+        id: construir
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.contexto }}
+          file: ${{ matrix.dockerfile }}
+          # Intel y ARM en la misma etiqueta: un portátil ARM es hoy una
+          # máquina de desarrollo corriente, y pedirle emulación para probar
+          # el producto es perderlo en el primer minuto.
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VCS_REF=${{ github.sha }}
+            BUILD_DATE=${{ github.event.repository.updated_at }}
+            VERSION=${{ steps.version.outputs.completa }}
+          provenance: true
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Firmar la imagen
+        uses: sigstore/cosign-installer@v3
+      - name: cosign
+        env:
+          DIGEST: ${{ steps.construir.outputs.digest }}
+        run: |
+          # Sin claves: la firma va contra la identidad del propio flujo de
+          # trabajo, así que no hay ninguna clave privada que guardar ni que
+          # rotar, y quien verifique comprueba de qué repositorio y de qué
+          # flujo salió la imagen.
+          cosign sign --yes \
+            "${REGISTRO_GHCR}/${{ github.repository_owner }}/${{ matrix.nombre }}@${DIGEST}"
+
+      - name: Inventario de componentes
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRO_GHCR }}/${{ github.repository_owner }}/${{ matrix.nombre }}
+          subject-digest: ${{ steps.construir.outputs.digest }}
+          push-to-registry: true
+
+  vulnerabilidades:
+    name: Análisis de vulnerabilidades
+    needs: imagenes
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        nombre: [my-open-dataspace, app, connector]
+    steps:
+      - name: La versión
+        id: version
+        run: |
+          version="${{ github.event.inputs.version || github.ref_name }}"
+          echo "completa=${version#v}" >> "${GITHUB_OUTPUT}"
+
+      - name: trivy
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: ghcr.io/${{ github.repository_owner }}/${{ matrix.nombre }}:${{ steps.version.outputs.completa }}
+          format: sarif
+          output: trivy-${{ matrix.nombre }}.sarif
+          # trivy no falla por encontrar algo: una vulnerabilidad conocida
+          # en una dependencia de la imagen base aparece a diario, y bloquear
+          # cada versión por eso lleva -- siempre -- a que alguien desactive el
+          # análisis. El informe se guarda y se mira.
+          #
+          # Que este trabajo entero no bloquee la publicación es cosa aparte, y
+          # se decide en los `needs` de `publicacion`, no aquí.
+          exit-code: "0"
+          severity: CRITICAL,HIGH
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vulnerabilidades-${{ matrix.nombre }}
+          path: trivy-${{ matrix.nombre }}.sarif
+
+  publicacion:
+    name: Crear la publicación
+    # Sólo de las imágenes. El análisis de vulnerabilidades corre al lado y no
+    # está aquí a propósito: si estuviera, un fallo suyo -- incluido uno que no
+    # tiene nada que ver con una vulnerabilidad, como que la acción no
+    # resuelva -- se saltaría la publicación con las imágenes ya subidas, y el
+    # resultado sería unas imágenes publicadas sin publicación que las
+    # anuncie. Paso justamente eso en la v0.1.0.
+    #
+    # Lo que sí bloquea es `pruebas`, de quien depende `imagenes`.
+    needs: imagenes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Notas
+        id: notas
+        run: |
+          version="${{ github.event.inputs.version || github.ref_name }}"
+          anterior=$(git describe --tags --abbrev=0 "${version}^" 2>/dev/null || true)
+          {
+            echo "## Instalar"
+            echo
+            echo '```bash'
+            echo "git clone https://github.com/${{ github.repository }}"
+            echo "cd my-open-dataspace && ./install.sh"
+            echo '```'
+            echo
+            echo "## Probarlo sin instalar nada"
+            echo
+            echo '```bash'
+            echo "docker run -p 8080:8080 ${ESPACIO_DOCKERHUB:-myopendataspace}/my-open-dataspace:${version#v}"
+            echo '```'
+            echo
+            echo "Esa imagen no lleva identidad ni TLS: es para evaluación y docencia."
+            echo
+            echo "## Cambios"
+            echo
+            if [ -n "${anterior}" ]; then
+              git log --no-merges --pretty='- %s' "${anterior}..${version}"
+            else
+              echo "- Primera versión."
+            fi
+            echo
+            echo "## Alcance"
+            echo
+            # De docs/alcance.md, que es la única copia de este texto: escrito
+            # aquí a mano, divergiría del README en la primera reescritura.
+            sed '/^---$/,$d' docs/alcance.md | sed '1{/^# Alcance$/d}'
+          } > NOTAS.md
+
+      - name: Publicar
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: NOTAS.md
+          tag_name: ${{ github.event.inputs.version || github.ref_name }}
+          draft: false
+          prerelease: ${{ startsWith(github.event.inputs.version || github.ref_name, 'v0.') }}
