@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>My Open Dataspace | Restricted access</title>
+  <link rel="stylesheet" href="./styles.css" />
+  <script src="./runtime-config.js"></script>
+  <script src="./site-config.js"></script>
+  <script>
+    window.DATASPACE_SITE.applyPage({
+      path: "/index-en.html",
+      title: "Restricted access",
+      robots: "noindex, follow"
+    });
+  </script>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <h1>Restricted access</h1>
+    <p>The console has been disabled for security reasons.</p>
+  </div>
+
+  <nav class="top-nav">
+    <a class="pill-link" href="./home-en.html">Home</a>
+    <a class="pill-link" href="./login-en.html">Login</a>
+    <span class="lang-switch" aria-label="Language selector">
+      <a class="pill-link" href="./index.html">ES</a>
+      <a class="pill-link is-active" href="./index-en.html">EN</a>
+    </span>
+  </nav>
+
+  <section class="card">
+    <h2>Console unavailable</h2>
+    <p>If you need connector operations, use user-based access from the login page.</p>
+    <a class="btn" href="./login-en.html">Go to login</a>
+  </section>
+</div>
+</body>
+</html>

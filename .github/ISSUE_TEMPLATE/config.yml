@@ -1,0 +1,12 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Un problema de seguridad
+    url: https://github.com/nekosphera/my-open-dataspace/security/advisories/new
+    about: >-
+      En privado, no aquí. Una incidencia es pública desde el primer momento, y
+      publicar un fallo explotable antes de que exista el arreglo deja
+      expuestos a todos los nodos instalados.
+  - name: Una duda sobre cómo usarlo
+    url: https://github.com/nekosphera/my-open-dataspace/discussions
+    about: >-
+      Las incidencias son para fallos e ideas. Para preguntas, las discusiones.
