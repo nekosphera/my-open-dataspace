@@ -2,7 +2,7 @@
 
 [English](README.md) · **Español**
 
-**Espacio de datos EDC autoalojado. Instálalo en cinco minutos, publica
+**Nodo de espacio de datos autoalojado. Instálalo en cinco minutos, publica
 productos de datos con sus políticas, negocia contratos y federa tu catálogo
 con otros nodos.**
 
@@ -168,7 +168,7 @@ primera, no vuelvas a crear el contrato —espera o pulsa **Recargar federado**.
 |---|---|
 | `caddy` | Puerta de entrada y TLS automático. Un único puerto expuesto. |
 | `app` | Portal público, consola del participante y API de alta. |
-| `connector` | Conector EDC del nodo: activos, políticas, contratos, negociación y descarga mediada. |
+| `connector` | Conector del nodo —propio, con una API de gestión al estilo de EDC—: activos, políticas, contratos, negociación y descarga mediada. |
 | `postgres` | Base para la aplicación, para el conector del nodo y para el de cada participante. |
 | `keycloak` | Identidad OIDC y roles, con el realm importado en el arranque. |
 | `fuseki` | Almacén RDF que sostiene el catálogo federado consolidado. |

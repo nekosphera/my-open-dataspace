@@ -40,6 +40,14 @@ import /etc/caddy/cookies-sin-tls.conf
 	# la alcanza por la red interna o por un tunel; abrirla aqui es dar la
 	# consola de administracion del conector a internet.
 
+	# Los ficheros subidos a este nodo tampoco. La aplicacion los sirve sin
+	# mirar contratos porque quien los pide es el conector, por la red
+	# interna, despues de comprobar la negociacion; publicada aqui, esa ruta
+	# es una descarga sin contrato para quien adivine o lea la direccion.
+	handle /api/onboarding/assets/* {
+		respond 404
+	}
+
 	# El resto -portal, consola y API- lo sirve la aplicacion.
 	handle {
 		reverse_proxy app:8092

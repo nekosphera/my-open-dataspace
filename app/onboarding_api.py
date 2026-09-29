@@ -2854,6 +2854,43 @@ def connector_service_token():
         return json.loads(response.read().decode("utf-8"))["access_token"]
 
 
+# Lo que un activo dice de si mismo en el catalogo publico.
+#
+# La API de gestion devuelve el activo entero, con la direccion de su dato
+# (`dataAddress.baseUrl`, `objectUrl`). Publicar eso es publicar donde vive el
+# dato: si la fuente es abierta, cualquiera que lea este catalogo se la lleva
+# sin negociar, y si es un fichero subido a este nodo, la ruta que lo sirve.
+# El catalogo dice como se obtiene -- la ruta mediada del conector, que exige
+# un contrato cerrado --, nunca de donde sale.
+DIRECCIONES_DEL_DATO = ("objectUrl", "url", "downloadUrl", "baseUrl")
+
+
+def ruta_mediada_de_descarga(connector_id, asset_id):
+    """La descarga a traves del conector, vista desde fuera del nodo."""
+    publico = default_public_base_url()
+    if not publico or not asset_id:
+        return ""
+    tramo = "" if connector_id == CONNECTOR_ID else f"/{parse.quote(connector_id, safe='')}"
+    return (
+        f"{publico}{CONNECTOR_PROXY_PREFIX}{tramo}/management/v3/assets/"
+        f"{parse.quote(str(asset_id), safe='')}/download"
+    )
+
+
+def oferta_publica_del_activo(item, connector_id):
+    item = {k: v for k, v in item.items() if k not in ("dataAddress", "privateProperties")}
+    propiedades = item.get("properties")
+    propiedades = dict(propiedades) if isinstance(propiedades, dict) else {}
+    for clave in DIRECCIONES_DEL_DATO:
+        propiedades.pop(clave, None)
+    propiedades["ods:connectorId"] = connector_id
+    acceso = ruta_mediada_de_descarga(connector_id, item.get("@id") or item.get("id"))
+    if acceso:
+        propiedades["ods:accessUrl"] = acceso
+    item["properties"] = propiedades
+    return item
+
+
 def local_catalog(force=False):
     """La oferta de este nodo, leida de su propio conector.
 
@@ -2909,8 +2946,8 @@ def local_catalog(force=False):
                 print(f"[onboarding-api] WARN {connector_id} no contestó por {ruta}: {exc}")
                 continue
             for item in items if isinstance(items, list) else []:
-                if clave == "assets" and isinstance(item.get("properties"), dict):
-                    item["properties"]["ods:connectorId"] = connector_id
+                if clave == "assets":
+                    item = oferta_publica_del_activo(item, connector_id)
                 catalog[clave].append(item)
 
     declarar_politica_y_contrato(catalog)

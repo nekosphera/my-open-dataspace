@@ -21,7 +21,7 @@ set -uo pipefail
 
 DIRECCION="${1:-http://localhost:8080}"
 RAIZ="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "${RAIZ}"
+cd "${RAIZ}" || exit 1
 
 titulo() { printf '\n=== %s ===\n' "$*"; }
 

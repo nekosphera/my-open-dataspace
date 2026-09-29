@@ -33,7 +33,7 @@ green while publishing something that has not gone through the gate.
 |---|---|
 | `ghcr.io/nekosphera/my-open-dataspace` | All-in-one, evaluation and teaching. It is the one the README links to. |
 | `ghcr.io/nekosphera/app` | Portal, console, API and federator. For the compose stack. |
-| `ghcr.io/nekosphera/connector` | The EDC connector. For the compose stack. |
+| `ghcr.io/nekosphera/connector` | The node's connector. For the compose stack. |
 
 **Docker Hub is pending.** The workflow pushes there too, under the
 `myopendataspace` namespace —which is free—, but only if the two repository

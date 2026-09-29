@@ -2,7 +2,7 @@
 
 **English** · [Español](README.es.md)
 
-**Self-hosted EDC dataspace. Install in five minutes, publish data products
+**Self-hosted dataspace node. Install in five minutes, publish data products
 with policies, negotiate contracts and federate your catalogue with other
 nodes.**
 
@@ -181,7 +181,7 @@ again — wait or press **Reload federated**.
 |---|---|
 | `caddy` | Entry point and automatic TLS. A single exposed port. |
 | `app` | Public portal, participant console and sign-up API. |
-| `connector` | The node's EDC connector: assets, policies, contracts, negotiation and mediated download. |
+| `connector` | The node's connector — the project's own, with an EDC-style management API: assets, policies, contracts, negotiation and mediated download. |
 | `postgres` | Database for the application, the node's connector and each participant's connector. |
 | `keycloak` | OIDC identity and roles, with the realm imported on startup. |
 | `fuseki` | RDF store behind the merged federated catalogue. |

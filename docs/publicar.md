@@ -33,7 +33,7 @@ la puerta.
 |---|---|
 | `ghcr.io/nekosphera/my-open-dataspace` | Todo-en-uno, evaluación y docencia. Es la que enlaza el README. |
 | `ghcr.io/nekosphera/app` | Portal, consola, API y federador. Para la composición. |
-| `ghcr.io/nekosphera/connector` | El conector EDC. Para la composición. |
+| `ghcr.io/nekosphera/connector` | El conector del nodo. Para la composición. |
 
 **Docker Hub está pendiente.** El flujo sube ahí también, bajo el espacio de
 nombres `myopendataspace` —que está libre—, pero sólo si existen los dos

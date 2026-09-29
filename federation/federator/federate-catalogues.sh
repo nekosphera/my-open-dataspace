@@ -636,7 +636,10 @@ ingest_connector() {
     asset_id=$(echo "${row}" | jq -r '.id // .["@id"] // empty')
     [[ -z "${asset_id}" ]] && continue
     name=$(echo "${row}" | jq -r '.properties["dct:title"] // .properties.name // empty')
-    base_url=$(echo "${row}" | jq -r '.properties.objectUrl // .dataAddress.baseUrl // empty')
+    # The mediated download route the node publishes, never the data's own
+    # address: publishing the source lets anyone who reads the catalogue
+    # fetch it without a contract.
+    base_url=$(echo "${row}" | jq -r '.properties["ods:accessUrl"] // empty')
     description=$(echo "${row}" | jq -r '.properties["dct:description"] // .properties.description // empty')
     language=$(echo "${row}" | jq -r '.properties["dct:language"] // .properties.language // empty')
     publisher=$(echo "${row}" | jq -r '.properties["dct:publisher"] // .properties.publisher // empty')
